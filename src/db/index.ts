@@ -1,5 +1,5 @@
 import config from './config';
-import mysql from 'mysql2/promise';
+import * as mysql from 'mysql2/promise';
 
 class SqlService {
   conn: mysql.Connection | null;
@@ -28,26 +28,22 @@ class SqlService {
    */
   async beginTransaction() {
     try {
-      if (!this.conn) {
-        await this.getConn();
-      }
+      await this.getConn();
       await this.conn.beginTransaction();
     } catch (err) {
-      console.log(err);
+      console.log('beginTransaction error', err);
     }
   }
 
   /**
    * 结束事务
    */
-  async cloasTransaction() {
+  async closeTransaction() {
     try {
-      if (!this.conn) {
-        await this.getConn();
-      }
+      await this.getConn();
       await this.conn.commit();
     } catch (err) {
-      console.log(err);
+      console.log('closeTransaction', err);
     }
   }
 
@@ -56,12 +52,10 @@ class SqlService {
    */
   async commit() {
     try {
-      if (!this.conn) {
-        await this.getConn();
-      }
+      await this.getConn();
       await this.conn.commit();
     } catch (err) {
-      console.log(err);
+      console.log('commit', err);
     }
   }
 
@@ -71,15 +65,14 @@ class SqlService {
    * @returns
    * @description 执行sql
    */
-  async query(sql: string) {
+  async query<T = any>(sql: string): Promise<T[]> {
     try {
-      if (!this.conn) {
-        await this.getConn();
-      }
+      await this.getConn();
+      // console.log('this.conn ==>', this.conn);
       const [rows] = await this.conn.execute(sql);
-      return rows;
+      return rows as T[];
     } catch (err) {
-      console.log(err);
+      throw err;
     }
   }
 }
