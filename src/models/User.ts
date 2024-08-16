@@ -4,6 +4,7 @@ interface User {
   class_id: number;
   username: string;
   password: string;
+  nickname: string;
 }
 
 interface Login {
