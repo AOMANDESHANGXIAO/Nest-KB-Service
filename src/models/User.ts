@@ -12,4 +12,11 @@ interface Login {
   password: string;
 }
 
-export { User, Login };
+interface Create {
+  username: string;
+  password: string;
+  nickname: string;
+  class_id: number;
+}
+
+export { User, Login, Create };

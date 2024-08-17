@@ -59,18 +59,24 @@ class SqlService {
     }
   }
 
-  /**
-   *
-   * @param sql sql语句
-   * @returns
-   * @description 执行sql
-   */
+  // 查询
   async query<T = any>(sql: string): Promise<T[]> {
     try {
       await this.getConn();
       // console.log('this.conn ==>', this.conn);
       const [rows] = await this.conn.execute(sql);
       return rows as T[];
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  // 新增
+  async insert(sql: string) {
+    try {
+      await this.getConn();
+      const [rows] = await this.conn.execute(sql);
+      return rows;
     } catch (err) {
       throw err;
     }

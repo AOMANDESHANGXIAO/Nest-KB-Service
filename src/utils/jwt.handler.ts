@@ -15,7 +15,7 @@ export default class JwtHandler {
     return jwt.sign({ payload }, this.secretKey, { expiresIn: this.expiresIn });
   }
 
-  verify(token: string): Promise<boolean> {
+  async verify(token: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       jwt.verify(token, this.secretKey, (err) => {
         if (err) {
@@ -28,16 +28,17 @@ export default class JwtHandler {
   }
 
   async validate(route: string, token: string): Promise<boolean> {
-    if (ignoreRoutes.includes(route)) {
-      return true;
-    }
-
-    if (!token) {
-      return false;
-    }
-
-    const isValid = await this.verify(token);
-
-    return isValid;
+    return new Promise((resolve, reject) => {
+      if (ignoreRoutes.includes(route)) {
+        resolve(true);
+      }
+      this.verify(token)
+        .then((isValid) => {
+          resolve(isValid);
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
   }
 }
