@@ -19,4 +19,8 @@ interface Create {
   class_id: number;
 }
 
-export { User, Login, Create };
+interface QueryCollaboration {
+  id: number;
+  group_id: number;
+}
+export { User, Login, Create, QueryCollaboration };

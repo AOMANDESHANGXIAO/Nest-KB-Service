@@ -47,6 +47,17 @@ class SqlService {
     }
   }
 
+  // 回滚
+  async rollback() {
+    try {
+      await this.getConn();
+      await this.conn.rollback();
+    } catch (err) {
+      console.log('rollback', err);
+      throw err;
+    }
+  }
+
   /**
    * 提交
    */

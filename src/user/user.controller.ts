@@ -1,6 +1,7 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Query, Get } from '@nestjs/common';
 import { UserService } from './user.service';
-import { Login } from '../models/User';
+import { Login, QueryCollaboration } from '../models/User';
+import { Create } from '../models/User';
 
 @Controller('user')
 export class UserController {
@@ -12,7 +13,12 @@ export class UserController {
   }
 
   @Post('signup')
-  create(@Body() createUserDto: any) {
-    return this.userService.create(createUserDto);
+  create(@Body() createUserParam: Create) {
+    return this.userService.create(createUserParam);
+  }
+
+  @Get('collInfo')
+  findCollaborationInfo(@Query() query: QueryCollaboration) {
+    return this.userService.queryUserCollaborationData(query);
   }
 }
