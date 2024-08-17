@@ -2,7 +2,6 @@ import { Injectable, HttpException } from '@nestjs/common';
 import { SqlService } from '../db/index';
 import {
   User,
-  UserUpdateDto,
   Login,
   Create,
   QueryCollaboration,
@@ -89,17 +88,6 @@ export class UserService extends SqlService {
         token: this.jwtHandler.generateJwt(user.username),
       },
     };
-  }
-
-  public async updateUser(param: UserUpdateDto) {
-    const { id } = param;
-    const columValues = this.generateColumnValusByObj(param, ['id']);
-
-    const sql = this.generateUpdateSql('student', columValues, [
-      { column: 'id', value: id },
-    ]);
-
-    return this.update(sql);
   }
 
   public async queryUserCollInfo({ id, group_id }: QueryCollaboration) {
