@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import { SqlService } from '../db/index';
-import { CreateDto, GroupTable } from './Models/index';
+import { CreateDto, GroupTable, JoinDto } from './Models/index';
 
 @Injectable()
 export class GroupService extends SqlService {
@@ -16,12 +16,12 @@ export class GroupService extends SqlService {
     class_id,
   }: CreateDto) {
     // 查询学生是否有团队
-    let [group] = await this.queryGroupByStudentId(student_id);
+    let [group] = await this.selectGroupByStudentId(student_id);
     if (group) {
       throw new Error('student has group');
     }
     // 查询组名是否重复
-    group = (await this.queryGroupByGroupname(group_name, class_id))[0];
+    group = (await this.selectGroupByGroupname(group_name, class_id))[0];
     if (group) {
       throw new Error('group name exists');
     }
@@ -70,13 +70,53 @@ export class GroupService extends SqlService {
     };
   }
 
+  public async join({ student_id, group_code }: JoinDto) {
+    const [group, user] = await Promise.all([
+      this.selectGroupByOneField('group_code', group_code),
+      this.selectStudentById(student_id),
+    ]);
+
+    if (group || !user) {
+      throw new HttpException('Already in group or user not found', 400);
+    }
+
+    this.transaction(async () => {
+      await this.update(
+        this.generateUpdateSql(
+          'student',
+          [{ column: 'group_id', value: group.id }],
+          [{ column: 'id', value: student_id, charset: '=' }],
+        ),
+      );
+    });
+
+    return {
+      data: {
+        group_id: group.id,
+        group_name: group.group_name,
+        group_code: group.group_code,
+        group_color: group.group_color,
+        group_description: group.group_description,
+        belong_class_id: group.belong_class_id,
+      },
+    };
+  }
+
+  private async selectGroupByOneField(field: string, value: string | number) {
+    const sql = `SELECT * FROM \`group\` WHERE ${field} = ${this.handleValue(value)}`;
+
+    const [res] = await this.query<GroupTable>(sql);
+
+    return res;
+  }
+
   private async selectGroupByGroupId(id: number) {
     const sql = `SELECT * FROM \`group\` WHERE id = ${id}`;
     const [res] = await this.query<GroupTable>(sql);
     return res;
   }
 
-  private async queryGroupByStudentId(id: number) {
+  private async selectGroupByStudentId(id: number) {
     const sql = `
     SELECT
       t1.belong_class_id,
@@ -96,11 +136,17 @@ export class GroupService extends SqlService {
     return res;
   }
 
-  private async queryGroupByGroupname(name: string, classId: number) {
+  private async selectGroupByGroupname(name: string, classId: number) {
     const sql = `SELECT * FROM \`group\` WHERE group_name = '${name}' and belong_class_id = ${classId}`;
 
     const res = await this.query<GroupTable>(sql);
 
+    return res;
+  }
+
+  private async selectStudentById(id: number) {
+    const sql = `SELECT * FROM student WHERE id = ${id}`;
+    const [res] = await this.query(sql);
     return res;
   }
 }

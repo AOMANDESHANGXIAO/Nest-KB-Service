@@ -15,4 +15,9 @@ interface GroupTable {
   belong_class_id: number;
 }
 
-export { CreateDto, GroupTable };
+interface JoinDto {
+  student_id: number;
+  group_code: string;
+}
+
+export { CreateDto, GroupTable, JoinDto };

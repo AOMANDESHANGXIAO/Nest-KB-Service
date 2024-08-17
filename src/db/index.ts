@@ -1,14 +1,6 @@
 import config from '../config';
 import * as mysql from 'mysql2/promise';
 
-const handleValue = (v: string | number) => {
-  if (typeof v === 'string') {
-    return `'${v}'`;
-  } else {
-    return v;
-  }
-};
-
 class SqlService {
   conn: mysql.Connection | null;
   dbConfig: typeof config.db;
@@ -92,6 +84,30 @@ class SqlService {
     }
   }
 
+  // 处理事务
+  async transaction(callback: () => Promise<any>) {
+    this.beginTransaction();
+    try {
+      await callback();
+      this.commit();
+    } catch (err) {
+      this.rollback();
+      throw err;
+    }
+  }
+
+  handleValue(v: string | number) {
+    if (typeof v === 'string') {
+      return `'${v}'`;
+    } else {
+      return v;
+    }
+  }
+
+  handleWhereList(whereList: (string | number)[]) {
+    return `[${whereList.map((item) => this.handleValue(item)).join(',')}]`;
+  }
+
   generateInsertSql(
     tableName: string,
     columns: string[],
@@ -109,7 +125,7 @@ class SqlService {
     }
     const valuesSql = values
       .map((value) => {
-        return `(${value.map((v) => handleValue(v)).join(',')})`;
+        return `(${value.map((v) => this.handleValue(v)).join(',')})`;
       })
       .join(',');
 
@@ -145,7 +161,7 @@ class SqlService {
     columValues: Array<{ column: string; value: string | number }>,
     where: Array<{
       column: string;
-      value: string | number;
+      value: string | number | string[] | number[];
       charset?: '=' | '>' | '<' | '!=' | '>=' | '<=' | 'LIKE' | 'IN';
     }>,
   ) {
@@ -156,12 +172,12 @@ class SqlService {
 
     const sql = columValues
       .map((columValue) => {
-        return `${columValue.column} = ${handleValue(columValue.value)}`;
+        return `${columValue.column} = ${this.handleValue(columValue.value)}`;
       })
       .join(', ');
     const whereSql = where
       .map((w) => {
-        return `${w.column} ${w.charset || '='} ${handleValue(w.value)}`;
+        return `${w.column} ${w.charset || '='} ${['number', 'string'].includes(typeof w.value) ? this.handleValue(w.value as string | number) : this.handleWhereList(w.value as (string | number)[])}`;
       })
       .join(' AND ');
 
