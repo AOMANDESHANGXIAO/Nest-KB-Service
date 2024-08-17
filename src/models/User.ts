@@ -7,6 +7,15 @@ interface User {
   nickname: string;
 }
 
+interface UserUpdateDto {
+  id: number;
+  group_id?: number;
+  class_id?: number;
+  username?: string;
+  password?: string;
+  nickname?: string;
+}
+
 interface Login {
   username: string;
   password: string;
@@ -23,20 +32,14 @@ interface QueryCollaboration {
   id: number;
   group_id: number;
 }
+
 type LegendData = string[];
-// interface Indicator {
-//   name: string;
-//   max: number;
-// }
+
 interface SeriesData {
   name: string;
   value: number[];
 }
-// interface selfAnalysisList {
-//   iconName: string;
-//   text: string;
-//   num: number;
-// }
+
 interface LinksData {
   source: string;
   target: string;
@@ -44,11 +47,10 @@ interface LinksData {
     width: number;
   };
 }
-// interface RelationShipSeriesData {
-//   name: string;
-// }
+
 export {
   User,
+  UserUpdateDto,
   Login,
   Create,
   QueryCollaboration,

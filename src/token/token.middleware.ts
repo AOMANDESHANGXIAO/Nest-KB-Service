@@ -14,7 +14,7 @@ export class TokenMiddleware implements NestMiddleware {
     if (token) {
       const jwtHandler = new JwtHandler();
       try {
-        await jwtHandler.validate(route, token); // 注意方法名是否为 validate
+        await jwtHandler.validate(route, token);
         next();
       } catch (err) {
         // 需要将中间件的异常包装成一个promise，在promise中抛出异常

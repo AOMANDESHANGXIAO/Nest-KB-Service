@@ -1,5 +1,5 @@
 import * as jwt from 'jsonwebtoken';
-import config from '../user/config';
+import config from '../config';
 
 const { secretKey, expiresIn, ignoreRoutes } = config.jwt;
 

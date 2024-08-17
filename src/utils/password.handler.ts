@@ -6,7 +6,7 @@ export default class PasswordHandles {
     this.saltRounds = 10;
   }
 
-  hasdPassword(password: string) {
+  hasdPassword(password: string): Promise<string> {
     return new Promise((resolve, reject) => {
       bcrypt.hash(password, this.saltRounds, function (err, hash) {
         if (err) {

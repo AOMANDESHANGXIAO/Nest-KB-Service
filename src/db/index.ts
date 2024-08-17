@@ -1,10 +1,20 @@
-import config from './config';
+import config from '../config';
 import * as mysql from 'mysql2/promise';
+
+const handleValue = (v: string | number) => {
+  if (typeof v === 'string') {
+    return `'${v}'`;
+  } else {
+    return v;
+  }
+};
 
 class SqlService {
   conn: mysql.Connection | null;
+  dbConfig: typeof config.db;
   constructor() {
     this.conn = null;
+    this.dbConfig = config.db;
   }
 
   /**
@@ -13,7 +23,7 @@ class SqlService {
   async getConn() {
     try {
       if (!this.conn) {
-        this.conn = await mysql.createConnection(config);
+        this.conn = await mysql.createConnection(this.dbConfig);
         console.log('Connection success');
         return;
       }
@@ -82,8 +92,83 @@ class SqlService {
     }
   }
 
+  generateInsertSql(
+    tableName: string,
+    columns: string[],
+    values: Array<(string | number)[]>,
+  ) {
+    // 验证输入是否有效
+    if (
+      !tableName ||
+      !columns ||
+      columns.length === 0 ||
+      !values ||
+      values.length === 0
+    ) {
+      throw new Error('invalid input');
+    }
+    const valuesSql = values
+      .map((value) => {
+        return `(${value.map((v) => handleValue(v)).join(',')})`;
+      })
+      .join(',');
+
+    const sql = `INSERT INTO \`${tableName}\` (${columns.join(',')}) VALUES ${valuesSql};`;
+
+    return sql;
+  }
+
   // 新增
-  async insert(sql: string) {
+  async insert(sql: string): Promise<string> {
+    try {
+      await this.getConn();
+      const [rows] = await this.conn.execute(sql);
+      return (rows as unknown as { insertId: string }).insertId;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  generateColumnValusByObj(obj: object, filters: string[] = []) {
+    return Object.keys(obj)
+      .filter((key) => !filters.includes(key))
+      .map((key) => {
+        return {
+          column: key,
+          value: obj[key],
+        };
+      });
+  }
+
+  generateUpdateSql(
+    tableName: string,
+    columValues: Array<{ column: string; value: string | number }>,
+    where: Array<{
+      column: string;
+      value: string | number;
+      charset?: '=' | '>' | '<' | '!=' | '>=' | '<=' | 'LIKE' | 'IN';
+    }>,
+  ) {
+    // 验证输入是否有效
+    if (!tableName || !columValues || columValues.length === 0) {
+      throw new Error('invalid input in generateUpdateSql');
+    }
+
+    const sql = columValues
+      .map((columValue) => {
+        return `${columValue.column} = ${handleValue(columValue.value)}`;
+      })
+      .join(', ');
+    const whereSql = where
+      .map((w) => {
+        return `${w.column} ${w.charset || '='} ${handleValue(w.value)}`;
+      })
+      .join(' AND ');
+
+    return `UPDATE \`${tableName}\` SET ${sql} WHERE ${whereSql};`;
+  }
+
+  async update(sql: string) {
     try {
       await this.getConn();
       const [rows] = await this.conn.execute(sql);

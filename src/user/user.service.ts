@@ -2,6 +2,7 @@ import { Injectable, HttpException } from '@nestjs/common';
 import { SqlService } from '../db/index';
 import {
   User,
+  UserUpdateDto,
   Login,
   Create,
   QueryCollaboration,
@@ -23,9 +24,7 @@ export class UserService extends SqlService {
   }
 
   // 业务
-  public async create(createUserInput: Create) {
-    const { username, password, nickname, class_id } = createUserInput;
-
+  public async create({ username, password, nickname, class_id }: Create) {
     const isExist = await this.findOneExist(username);
     if (isExist) {
       throw new HttpException('用户名已存在', 400);
@@ -34,10 +33,14 @@ export class UserService extends SqlService {
 
       const hashedPassword = await this.pwdHandler.hasdPassword(password);
 
-      const sql = `INSERT INTO student (username, password, nickname, class_id) VALUES ('${username}', '${hashedPassword}', '${nickname}', ${class_id})`;
-
       try {
-        await this.insert(sql);
+        await this.insert(
+          this.generateInsertSql(
+            'student',
+            ['username', 'password', 'nickname', 'class_id'],
+            [[username, hashedPassword, nickname, class_id]],
+          ),
+        );
         await this.closeTransaction();
         await this.commit();
         return {
@@ -51,9 +54,7 @@ export class UserService extends SqlService {
   }
 
   // 业务
-  public async login(param: Login) {
-    const { username, password } = param;
-
+  public async login({ username, password }: Login) {
     // 判断用户是否存在
     const isExist = await this.findOneExist(username);
     if (!isExist) {
@@ -90,6 +91,17 @@ export class UserService extends SqlService {
     };
   }
 
+  public async updateUser(param: UserUpdateDto) {
+    const { id } = param;
+    const columValues = this.generateColumnValusByObj(param, ['id']);
+
+    const sql = this.generateUpdateSql('student', columValues, [
+      { column: 'id', value: id },
+    ]);
+
+    return this.update(sql);
+  }
+
   public async queryUserCollInfo({ id, group_id }: QueryCollaboration) {
     // 返回给前端的数据集合
     let LegendData: LegendData = [];
@@ -103,8 +115,6 @@ export class UserService extends SqlService {
         this.findAllByGroupId(group_id),
         this.findInteractionByGroupId(group_id),
       ]);
-
-    console.log('interactions: ', interactions);
 
     const userMap = this.mapUserList(userList);
 
