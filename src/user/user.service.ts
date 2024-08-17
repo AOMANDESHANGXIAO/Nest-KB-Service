@@ -11,6 +11,7 @@ import {
 } from '../models/User';
 import PasswordHandles from '../utils/password.handler';
 import JwtHandler from '../utils/jwt.handler';
+import { StudentTable } from 'src/crud/Table.model';
 
 @Injectable()
 export class UserService extends SqlService {
@@ -34,7 +35,7 @@ export class UserService extends SqlService {
 
       try {
         await this.insert(
-          this.generateInsertSql(
+          this.generateInsertSql<StudentTable>(
             'student',
             ['username', 'password', 'nickname', 'class_id'],
             [[username, hashedPassword, nickname, class_id]],

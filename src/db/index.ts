@@ -1,5 +1,6 @@
 import config from '../config';
 import * as mysql from 'mysql2/promise';
+import { Tables } from 'src/crud/Table.model';
 
 class SqlService {
   conn: mysql.Connection | null;
@@ -108,9 +109,9 @@ class SqlService {
     return `[${whereList.map((item) => this.handleValue(item)).join(',')}]`;
   }
 
-  generateInsertSql(
-    tableName: string,
-    columns: string[],
+  generateInsertSql<T>(
+    tableName: Tables,
+    columns: string[] | Array<keyof T>,
     values: Array<(string | number)[]>,
   ) {
     // 验证输入是否有效
@@ -145,7 +146,10 @@ class SqlService {
     }
   }
 
-  generateColumnValusByObj(obj: object, filters: string[] = []) {
+  generateColumnValusByObj<T extends object>(
+    obj: object | T,
+    filters: string[] = [],
+  ): Array<{ column: string | keyof T; value: string | number }> {
     return Object.keys(obj)
       .filter((key) => !filters.includes(key))
       .map((key) => {
@@ -156,11 +160,11 @@ class SqlService {
       });
   }
 
-  generateUpdateSql(
+  generateUpdateSql<T>(
     tableName: string,
-    columValues: Array<{ column: string; value: string | number }>,
+    columValues: Array<{ column: string | keyof T; value: string | number }>,
     where: Array<{
-      column: string;
+      column: string | keyof T;
       value: string | number | string[] | number[];
       charset?: '=' | '>' | '<' | '!=' | '>=' | '<=' | 'LIKE' | 'IN';
     }>,
@@ -172,12 +176,12 @@ class SqlService {
 
     const sql = columValues
       .map((columValue) => {
-        return `${columValue.column} = ${this.handleValue(columValue.value)}`;
+        return `${String(columValue.column)} = ${this.handleValue(columValue.value)}`;
       })
       .join(', ');
     const whereSql = where
       .map((w) => {
-        return `${w.column} ${w.charset || '='} ${['number', 'string'].includes(typeof w.value) ? this.handleValue(w.value as string | number) : this.handleWhereList(w.value as (string | number)[])}`;
+        return `${String(w.column)} ${w.charset || '='} ${['number', 'string'].includes(typeof w.value) ? this.handleValue(w.value as string | number) : this.handleWhereList(w.value as (string | number)[])}`;
       })
       .join(' AND ');
 

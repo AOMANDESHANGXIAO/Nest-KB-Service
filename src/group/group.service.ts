@@ -36,7 +36,7 @@ export class GroupService extends SqlService {
     let newGroup: GroupTable;
     this.transaction(async () => {
       const groupId = await this.insert(
-        this.generateInsertSql(
+        this.generateInsertSql<GroupTable>(
           'group',
           ['group_name', 'group_color', 'group_description', 'belong_class_id'],
           [[group_name, group_color, group_description, class_id]],

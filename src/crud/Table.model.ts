@@ -1,7 +1,7 @@
 /**
  * 数据库表的声明
  */
-export interface Student {
+export interface StudentTable {
   id: number;
   group_id: number;
   class_id: number;
@@ -18,3 +18,5 @@ export interface GroupTable {
   group_color: string;
   belong_class_id: number;
 }
+
+export type Tables = 'student' | 'group';
