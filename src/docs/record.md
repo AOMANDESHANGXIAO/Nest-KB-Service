@@ -65,3 +65,5 @@ export class CreateUserInput {
 
 ```
 
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjoiYWRtaW4iLCJpYXQiOjE3MjM4NTYyNTMsImV4cCI6MTcyMzg1NjI2OH0.hEjG5OdJiY0qRDejsWCgT3uRnQCNvhPcepY0WdTI5-o
+

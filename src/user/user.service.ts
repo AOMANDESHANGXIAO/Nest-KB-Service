@@ -2,8 +2,8 @@ import { Injectable, HttpException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SqlService } from '../db/index';
 import { User, Login } from '../models/User';
-import PasswordHandles from './utils/password.handler';
-import JwtHandler from './utils/jwt.handler';
+import PasswordHandles from '../utils/password.handler';
+import JwtHandler from '../utils/jwt.handler';
 
 @Injectable()
 export class UserService extends SqlService {
@@ -54,15 +54,11 @@ export class UserService extends SqlService {
       nickname: user.nickname,
       group_id: user.group_id,
       class_id: user.class_id,
-      group_name: groupInfo[0]?.group_name || null,
-      group_code: groupInfo[0]?.group_code || null,
-      group_color: groupInfo[0]?.group_color || null,
+      group_name: groupInfo?.group_name || null,
+      group_code: groupInfo?.group_code || null,
+      group_color: groupInfo?.group_color || null,
       token: this.jwtHandler.generateJwt(user.username),
     };
-  }
-
-  findAll() {
-    return `This action returns all user`;
   }
 
   async findOneExist(key: number | string): Promise<boolean> {
@@ -102,13 +98,5 @@ export class UserService extends SqlService {
     }>(sql);
 
     return result;
-  }
-
-  update(id: number) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
   }
 }
