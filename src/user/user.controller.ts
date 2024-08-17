@@ -19,6 +19,10 @@ export class UserController {
 
   @Get('collInfo')
   findCollaborationInfo(@Query() query: QueryCollaboration) {
-    return this.userService.queryUserCollaborationData(query);
+    query = {
+      group_id: +query.group_id,
+      id: +query.id,
+    };
+    return this.userService.queryUserCollInfo(query);
   }
 }

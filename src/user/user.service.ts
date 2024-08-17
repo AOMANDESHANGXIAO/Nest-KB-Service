@@ -1,6 +1,14 @@
 import { Injectable, HttpException } from '@nestjs/common';
 import { SqlService } from '../db/index';
-import { User, Login, Create, QueryCollaboration } from '../models/User';
+import {
+  User,
+  Login,
+  Create,
+  QueryCollaboration,
+  LegendData,
+  SeriesData,
+  LinksData,
+} from '../models/User';
 import PasswordHandles from '../utils/password.handler';
 import JwtHandler from '../utils/jwt.handler';
 
@@ -15,7 +23,7 @@ export class UserService extends SqlService {
   }
 
   // 业务
-  async create(createUserInput: Create) {
+  public async create(createUserInput: Create) {
     const { username, password, nickname, class_id } = createUserInput;
 
     const isExist = await this.findOneExist(username);
@@ -43,7 +51,7 @@ export class UserService extends SqlService {
   }
 
   // 业务
-  async login(param: Login) {
+  public async login(param: Login) {
     const { username, password } = param;
 
     // 判断用户是否存在
@@ -82,239 +90,200 @@ export class UserService extends SqlService {
     };
   }
 
-  // 业务
-  async queryUserCollaborationData(param: QueryCollaboration) {
-    let { id, group_id } = param;
-    id = +id;
-    group_id = +group_id;
+  public async queryUserCollInfo({ id, group_id }: QueryCollaboration) {
+    // 返回给前端的数据集合
+    let LegendData: LegendData = [];
+    let SeriesData: SeriesData[] = [];
+    let LinksData: LinksData[] = [];
 
-    const LegendData = [];
-    const SeriesData = [];
-    const LinksData = [];
+    const [memberIdeaList, sumAndReviseList, userList, interactions] =
+      await Promise.all([
+        this.findMembersIdeaNumbersById(group_id),
+        this.findMembersSummaryAndReviseById(group_id),
+        this.findAllByGroupId(group_id),
+        this.findInteractionByGroupId(group_id),
+      ]);
 
-    const memberIdeaList = await this.findMembersIdeaNumbersById(group_id);
+    console.log('interactions: ', interactions);
 
-    const sumAndReviseList =
-      await this.findMembersSummaryAndReviseById(group_id);
+    const userMap = this.mapUserList(userList);
 
-    const userList = await this.findAllByGroupId(group_id);
+    const stuDiscussMap = this.mapStudentData(memberIdeaList, [
+      'proposeNum',
+      'approveNum',
+      'rejectNum',
+    ]);
 
-    // 生成legend+记录小组成员的姓名和id
+    const summaryMap = this.mapStudentData(sumAndReviseList, [
+      'summaryNum',
+      'reviseNum',
+    ]);
+
+    LegendData = this.generateLegendData(userList);
+    SeriesData = this.generateSeriesData(
+      LegendData,
+      userMap,
+      stuDiscussMap,
+      summaryMap,
+    );
+    LinksData = this.generateLinksData(LegendData, interactions);
+
+    const { proposeNum, feedbackNum, summaryNum } = this.getSelfAnalysisData(
+      id,
+      stuDiscussMap,
+      summaryMap,
+    );
+
+    return {
+      data: {
+        selfAnalysisList: this.createSelfAnalysisList(
+          proposeNum,
+          feedbackNum,
+          summaryNum,
+        ),
+        Indicator: this.createIndicator(stuDiscussMap, summaryMap),
+        LegendData,
+        SeriesData,
+        LinksData,
+        RelationShipSeriesData: LegendData.map((name) => ({ name })),
+      },
+    };
+  }
+
+  private generateLegendData(userList: { id: number; stuName: string }[]) {
+    return userList.map((u) => u.stuName);
+  }
+
+  private mapUserList(
+    userList: { id: number; stuName: string }[],
+  ): Map<string, { id: number; stuName: string }> {
     const userMap = new Map();
     userList.forEach((r) => {
-      LegendData.push(r.stuName);
       userMap.set(r.stuName, r);
     });
+    return userMap;
+  }
 
-    let maxP = 0; // 分享
-    let maxR = 0; // 不同意
-    let maxA = 0; // 同意
-    let maxS = 0; // 总结
-    let maxRe = 0; // 修改
-
-    /**
-     * 学生个人的信息
-     */
-    let proposeNum = 0;
-    let feedbackNum = 0;
-    let summaryNum = 0;
-    /**
-     * 查找成员分享观点最多、同意观点最多以及不同意观点最多的成员
-     */
-    const stuDiscussMap = new Map();
-    memberIdeaList.forEach((r) => {
-      if (Number(r.proposeNum) > maxP) {
-        maxP = Number(r.proposeNum);
-      }
-
-      if (Number(r.approveNum) > maxA) {
-        maxA = Number(r.approveNum);
-      }
-
-      if (Number(r.rejectNum) > maxR) {
-        maxR = Number(r.rejectNum);
-      }
-
-      stuDiscussMap.set(r.id, r);
+  private mapStudentData(dataList: any[], fields: string[]): Map<number, any> {
+    const dataMap = new Map();
+    dataList.forEach((data) => {
+      const dataObj: any = {};
+      fields.forEach((field) => {
+        dataObj[field] = Number(data[field] || 0);
+      });
+      dataMap.set(data.id, dataObj);
     });
+    return dataMap;
+  }
 
-    const summaryMap = new Map();
-    sumAndReviseList.forEach((r) => {
-      if (Number(r.summaryNum) > maxS) {
-        maxS = Number(r.summaryNum);
-      }
-      if (Number(r.reviseNum) > maxRe) {
-        maxRe = Number(r.reviseNum);
-      }
+  private generateSeriesData(
+    LegendData: string[],
+    userMap: Map<string, any>,
+    stuDiscussMap: Map<number, any>,
+    summaryMap: Map<number, any>,
+  ) {
+    return LegendData.map((legend) => {
+      const id = userMap.get(legend).id;
+      const value = [
+        'proposeNum',
+        'approveNum',
+        'rejectNum',
+        'summaryNum',
+        'reviseNum',
+      ].map(
+        (key) => stuDiscussMap.get(id)?.[key] || summaryMap.get(id)?.[key] || 0,
+      );
+      return { name: legend, value };
+    });
+  }
 
-      // 存储每个学生的总结次数
-      summaryMap.set(r.id, {
-        summaryNum: Number(r.summaryNum),
-        reviseNum: Number(r.reviseNum),
+  private generateLinksData(LegendData: string[], interactions: any[]): any[] {
+    const LinksData = [];
+    LegendData.forEach((source, i) => {
+      LegendData.slice(i + 1).forEach((target) => {
+        const existingLink = LinksData.find(
+          (link) =>
+            (link.source === source && link.target === target) ||
+            (link.source === target && link.target === source),
+        );
+        if (!existingLink) {
+          LinksData.push({ source, target, lineStyle: { width: 0 } });
+        }
       });
     });
-    /**
-     * 求学生本人的各方面数据
-     */
-    proposeNum = Number(stuDiscussMap.get(id).proposeNum);
-    feedbackNum =
-      Number(stuDiscussMap.get(id).approveNum) +
-      Number(stuDiscussMap.get(id).rejectNum);
-    summaryNum = Number(summaryMap.get(id).summaryNum);
 
-    const Indicator = [
+    interactions.forEach((interaction) => {
+      const link = LinksData.find(
+        (link) =>
+          (link.source === interaction.activer &&
+            link.target === interaction.inActiver) ||
+          (link.source === interaction.inActiver &&
+            link.target === interaction.activer),
+      );
+      if (link) link.lineStyle.width += 1;
+    });
+
+    return LinksData;
+  }
+
+  private getSelfAnalysisData(
+    id: number,
+    stuDiscussMap: Map<number, any>,
+    summaryMap: Map<number, any>,
+  ) {
+    const proposeNum = stuDiscussMap.get(id)?.proposeNum || 0;
+    const feedbackNum =
+      (stuDiscussMap.get(id)?.approveNum || 0) +
+      (stuDiscussMap.get(id)?.rejectNum || 0);
+    const summaryNum = summaryMap.get(id)?.summaryNum || 0;
+    return { proposeNum, feedbackNum, summaryNum };
+  }
+
+  private createSelfAnalysisList(
+    proposeNum: number,
+    feedbackNum: number,
+    summaryNum: number,
+  ) {
+    return [
       {
-        name: '发布',
-        max: maxP,
+        iconName: 'discussion',
+        text: '参与了讨论',
+        num: proposeNum + feedbackNum + summaryNum,
       },
-      {
-        name: '支持',
-        max: maxA,
-      },
-      {
-        name: '反对',
-        max: maxR,
-      },
-      {
-        name: '总结',
-        max: maxS,
-      },
-      {
-        name: '修改',
-        max: maxRe,
-      },
+      { iconName: 'share', text: '分享了观点', num: proposeNum },
+      { iconName: 'feedback', text: '反馈了观点', num: feedbackNum },
+      { iconName: 'summary', text: '总结了讨论', num: summaryNum },
     ];
-    // 找出每个学生发布、支持、反对、总结、修改的情况
-    const valueSequence = [
+  }
+
+  private createIndicator(
+    stuDiscussMap: Map<number, any>,
+    summaryMap: Map<number, any>,
+  ) {
+    const maxValues = [
       'proposeNum',
       'approveNum',
       'rejectNum',
       'summaryNum',
       'reviseNum',
-    ];
-
-    // console.log('LegendData ===>', LegendData)
-
-    LegendData.map((legend) => {
-      // console.log(legend)
-      const value = [0, 0, 0, 0, 0];
-      const stuId = Number(userMap.get(legend).id); // 通过名字找到id
-
-      stuDiscussMap.get(stuId) &&
-        Object.keys(stuDiscussMap.get(stuId)).map((key) => {
-          if (valueSequence.includes(key)) {
-            value[valueSequence.indexOf(key)] = Number(
-              stuDiscussMap.get(stuId)[key],
-            );
-          }
-        });
-
-      summaryMap.get(stuId) &&
-        Object.keys(summaryMap.get(stuId)).map((key) => {
-          if (valueSequence.includes(key)) {
-            value[valueSequence.indexOf(key)] = Number(
-              summaryMap.get(stuId)[key],
-            );
-          }
-        });
-
-      SeriesData.push({
-        name: legend,
-        value,
-      });
+    ].map((key) => {
+      return Math.max(
+        ...Array.from(stuDiscussMap.values())
+          .concat(summaryMap.values())
+          .map((data) => data[key] || 0),
+      );
     });
 
-    const interactions = await this.findInteractionByGroupId(group_id);
-
-    /**
-     * 组内互动的LinksData生成
-     */
-    for (let i = 0; i < LegendData.length; i++) {
-      for (let j = i + 1; j < LegendData.length; j++) {
-        if (i === j) continue;
-        if (
-          LinksData.find(
-            (link) =>
-              link.source === LegendData[i] && link.target === LegendData[j],
-          )
-        ) {
-          continue;
-        }
-
-        if (
-          LinksData.find(
-            (link) =>
-              link.source === LegendData[j] && link.target === LegendData[i],
-          )
-        ) {
-          continue;
-        }
-
-        LinksData.push({
-          source: LegendData[i],
-          target: LegendData[j],
-          lineStyle: {
-            width: 0,
-          },
-        });
-      }
-    }
-
-    // 根据result_4统计小组成员的互动次数
-    for (let i = 0; i < interactions.length; i++) {
-      for (let j = 0; j < LinksData.length; j++) {
-        if (
-          (LinksData[j].source === interactions[i].activer &&
-            LinksData[j].target === interactions[i].inActiver) ||
-          (LinksData[j].target === interactions[i].activer &&
-            LinksData[j].source === interactions[i].inActiver)
-        ) {
-          LinksData[j].lineStyle.width += 1;
-          break;
-        }
-      }
-    }
-
-    const data = {
-      selfAnalysisList: [
-        {
-          iconName: 'discussion',
-          text: '参与了讨论',
-          num: Number(proposeNum) + Number(feedbackNum) + Number(summaryNum),
-        },
-        {
-          iconName: 'share',
-          text: '分享了观点',
-          num: Number(proposeNum),
-        },
-        {
-          iconName: 'feedback',
-          text: '反馈了观点',
-          num: Number(feedbackNum),
-        },
-        {
-          iconName: 'summary',
-          text: '总结了讨论',
-          num: Number(summaryNum),
-        },
-      ],
-      Indicator,
-      LegendData,
-      SeriesData,
-      LinksData,
-      RelationShipSeriesData: LegendData.map((legend) => {
-        return {
-          name: legend,
-        };
-      }),
-    };
-
-    return {
-      data,
-    };
+    return [
+      { name: '发布', max: maxValues[0] },
+      { name: '支持', max: maxValues[1] },
+      { name: '反对', max: maxValues[2] },
+      { name: '总结', max: maxValues[3] },
+      { name: '修改', max: maxValues[4] },
+    ];
   }
 
-  async findOneExist(key: number | string): Promise<boolean> {
+  private async findOneExist(key: number | string): Promise<boolean> {
     if (typeof key === 'number') {
       return false;
     } else if (typeof key === 'string') {
@@ -324,7 +293,7 @@ export class UserService extends SqlService {
     return false;
   }
 
-  async findOneByUsername(username: string): Promise<User[]> {
+  private async findOneByUsername(username: string): Promise<User[]> {
     const sql = `SELECT * FROM student WHERE username = '${username}'`;
 
     const res = await this.query<User>(sql);
@@ -332,7 +301,7 @@ export class UserService extends SqlService {
     return res;
   }
 
-  async findUserGroupById(id: number) {
+  private async findUserGroupById(id: number) {
     const sql = `
     SELECT 
     id, 
@@ -352,7 +321,7 @@ export class UserService extends SqlService {
     return result;
   }
 
-  async findMembersIdeaNumbersById(group_id: number) {
+  private async findMembersIdeaNumbersById(group_id: number) {
     const sql = `
     SELECT
       t1.student_id AS id,
@@ -379,7 +348,7 @@ export class UserService extends SqlService {
     return res;
   }
 
-  async findMembersSummaryAndReviseById(group_id: number) {
+  private async findMembersSummaryAndReviseById(group_id: number) {
     const sql = `
     SELECT
       t1.student_id AS id,
@@ -407,7 +376,7 @@ export class UserService extends SqlService {
     return res;
   }
 
-  async findAllByGroupId(group_id: number) {
+  private async findAllByGroupId(group_id: number) {
     const sql = `
     SELECT
       t1.id,
@@ -425,7 +394,7 @@ export class UserService extends SqlService {
     return res;
   }
 
-  async findInteractionByGroupId(group_id: number) {
+  private async findInteractionByGroupId(group_id: number) {
     const sql = `
   SELECT 
       t1.source, 
