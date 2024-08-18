@@ -32,4 +32,14 @@ export class GroupController {
       queryInput.group_id,
     );
   }
+
+  @Get('query_revise_data')
+  queryReviseData(@Query() queryInput: { group_id: number; topic_id: number }) {
+    return this.groupService.queryMemberReviseData(queryInput);
+  }
+
+  @Get('query_member')
+  queryMemeberContribution(@Query() queryInput: { id: number }) {
+    return this.groupService.queryEachMemberContribution(queryInput.id);
+  }
 }

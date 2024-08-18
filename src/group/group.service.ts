@@ -180,4 +180,113 @@ export class GroupService extends SqlService {
       },
     };
   }
+
+  /**
+   *
+   * @param param0
+   * @returns
+   * @description 根据小组id查询小组成员总结数据,等待重构
+   * @refactor
+   */
+  public async queryMemberReviseData({
+    group_id,
+    topic_id,
+  }: {
+    group_id: number;
+    topic_id: number;
+  }) {
+    return {
+      data: {
+        group_id,
+        topic_id,
+      },
+      message: 'This api has been deprecated',
+    };
+  }
+
+  /**
+   *
+   * @param id groupId
+   * @description 根据小组id查询小组成员的贡献数据
+   */
+  public async queryEachMemberContribution(id: number) {
+    const res =
+      await this.groupCrud.selectEachOneProposeFeedbackSummaryByGroupId(id);
+
+    // 查询最佳分享者、最佳反馈者、最佳总结者, 可以并列
+    const maxRecord = {
+      propose: 1,
+      feedback: 1,
+      summary: 1,
+    };
+
+    res.forEach((item) => {
+      if (item.summaryNum >= maxRecord.summary) {
+        maxRecord.summary = item.summaryNum;
+      }
+      if (item.proposeNum >= maxRecord.propose) {
+        maxRecord.propose = item.proposeNum;
+      }
+      if (item.feedbackNum >= maxRecord.feedback) {
+        maxRecord.feedback = item.feedbackNum;
+      }
+    });
+
+    const bestStuIdRecords = {
+      summary: [],
+      propose: [],
+      feedback: [],
+    };
+
+    res.forEach((item) => {
+      if (item.summaryNum === maxRecord.summary) {
+        bestStuIdRecords.summary.push(item.id);
+      }
+      if (item.proposeNum === maxRecord.propose) {
+        bestStuIdRecords.propose.push(item.id);
+      }
+      if (item.feedbackNum === maxRecord.feedback) {
+        bestStuIdRecords.feedback.push(item.id);
+      }
+    });
+
+    return {
+      data: {
+        list: res.map((item) => {
+          const title: Array<{ text: string; type: string }> = [];
+
+          if (bestStuIdRecords.summary.includes(item.id)) {
+            title.push({
+              text: '最佳总结者',
+              type: 'summaryKing',
+            });
+          }
+          if (bestStuIdRecords.propose.includes(item.id)) {
+            title.push({
+              text: '最佳分享者',
+              type: 'shareKing',
+            });
+          }
+          if (bestStuIdRecords.feedback.includes(item.id)) {
+            title.push({
+              text: '最佳反馈者',
+              type: 'feedbackKing',
+            });
+          }
+
+          return {
+            id: item.id,
+            name: item.name,
+            title,
+            data: {
+              discussNum: item.proposeNum + item.feedbackNum + item.summaryNum,
+              feedbackNum: item.feedbackNum,
+              proposeNum: item.proposeNum,
+              summaryNum: item.summaryNum,
+            },
+          };
+        }),
+      },
+    };
+  }
 }

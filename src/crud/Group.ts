@@ -2,17 +2,55 @@ import { SqlService } from 'src/db';
 import { GroupTable } from './Table.model';
 import { CRUDer } from './index';
 
+// 提供Group表的增删改查方法
 interface GroupCRUD extends CRUDer {
   selectGroupByOneField: (
     field: string,
     value: string | number,
   ) => Promise<GroupTable>;
+
   selectGroupByGroupId: (id: number) => Promise<GroupTable>;
+
   selectGroupByStudentId: (id: number) => Promise<GroupTable>;
+
   selectGroupByGroupname: (
     name: string,
     classId: number,
   ) => Promise<GroupTable>;
+
+  queryShareFeedbackSummaryNumByGroupId: (
+    id: number,
+  ) => Promise<{ share: number; feedback: number; summary: number }>;
+
+  queryShareFeedbackNumByGroupId: (
+    id: number,
+  ) => Promise<{ share: number; feedback: number }[]>;
+
+  querySummaryNumByGroupId: (id: number) => Promise<{ summary: number }[]>;
+
+  selectEachMemberProposeFeedbackByGroupId: (
+    id: number,
+  ) => Promise<{ name: string; proposeNum: string; feedbackNum: string }[]>;
+
+  selectEachMemberSummaryByGroupId: (
+    id: number,
+  ) => Promise<{ name: string; summaryNum: string }[]>;
+
+  selectEachMemberProposeFeedbackSummaryByGroupId: (id: number) => Promise<{
+    feedbacks: { name: string; value: number }[];
+    proposes: { name: string; value: number }[];
+    summarys: { name: string; value: number }[];
+  }>;
+
+  selectEachOneProposeFeedbackSummaryByGroupId: (id: number) => Promise<
+    {
+      summaryNum: number;
+      proposeNum: number;
+      feedbackNum: number;
+      id: number;
+      name: string;
+    }[]
+  >;
 }
 
 export default class GroupCRUDer implements GroupCRUD {
@@ -67,6 +105,18 @@ export default class GroupCRUDer implements GroupCRUD {
     const [res] = await this.s.query<GroupTable>(sql);
 
     return res;
+  }
+
+  public async selectAllNameByGroupId(id: number) {
+    const sql = `
+    SELECT
+      t1.id,
+      t1.nickname name 
+    FROM
+      student t1 
+    WHERE
+      t1.group_id = ${id};`;
+    return this.s.query<{ id: number; name: string }>(sql);
   }
 
   public async queryShareFeedbackSummaryNumByGroupId(id: number) {
@@ -178,5 +228,79 @@ export default class GroupCRUDer implements GroupCRUD {
       proposes,
       summarys,
     };
+  }
+
+  public async selectEachOneShareFeedbackByGroupId(id: number) {
+    const sql = `
+    SELECT
+      t1.student_id as id,
+      t3.nickname as name,
+      SUM( CASE WHEN t2.type = 'idea_to_group' THEN 1 ELSE 0 END ) AS proposeNum,
+      sum( CASE WHEN t2.type = 'reject' OR t2.type = 'approve' THEN 1 ELSE 0 END ) AS feedbackNum 
+    FROM
+      node_table t1
+      JOIN edge_table t2 ON t2.source = t1.id
+      JOIN student t3 ON t3.id = t1.student_id
+      AND t3.group_id = ${id} 
+    GROUP BY
+      t1.student_id;`;
+
+    return this.s.query<{
+      id: number; // 学生id
+      name: string;
+      proposeNum: number;
+      feedbackNum: number;
+    }>(sql);
+  }
+
+  public async selectEachOneSummaryByGroupId(id: number) {
+    const sql = `
+    SELECT
+      t1.student_id as id,
+      count( * ) AS summaryNum 
+    FROM
+      node_revise_record_table t1
+      JOIN node_table t2 ON t2.type = 'group'
+      JOIN student t3 ON t3.id = t1.student_id 
+      AND t3.group_id = ${id} 
+      AND t2.id = t1.node_id 
+    GROUP BY
+      t1.student_id
+    `;
+
+    return this.s.query<{ id: number; summaryNum: number }>(sql);
+  }
+
+  public async selectEachOneProposeFeedbackSummaryByGroupId(id: number) {
+    const [eachOneProposeFeedback, eachOneSummary, eachOnes] =
+      await Promise.all([
+        this.selectEachOneShareFeedbackByGroupId(id),
+        this.selectEachOneSummaryByGroupId(id),
+        this.selectAllNameByGroupId(id),
+      ]);
+    // 拼接数据, 将eachOneSummary的数据拼接到eachOneProposeFeedback
+    const eachOneProposeFeedbackSummary = eachOneProposeFeedback.map((item) => {
+      const summary = eachOneSummary.find((i) => i.id === item.id);
+      return {
+        ...item,
+        summaryNum: summary?.summaryNum || 0,
+      };
+    });
+    eachOnes.forEach((item) => {
+      const index = eachOneProposeFeedbackSummary.findIndex(
+        (i) => i.id === item.id,
+      );
+      if (index === -1) {
+        eachOneProposeFeedbackSummary.push({
+          id: item.id,
+          name: item.name,
+          proposeNum: 0,
+          feedbackNum: 0,
+          summaryNum: 0,
+        });
+      }
+    });
+
+    return eachOneProposeFeedbackSummary;
   }
 }
