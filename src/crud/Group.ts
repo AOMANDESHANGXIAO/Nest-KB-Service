@@ -110,4 +110,73 @@ export default class GroupCRUDer implements GroupCRUD {
 
     return this.s.query<{ summary: number }>(sql);
   }
+
+  public async selectEachMemberProposeFeedbackByGroupId(id: number) {
+    const sql = `
+    SELECT 
+        student.nickname AS name,
+        SUM(CASE WHEN edge_table.type = 'idea_to_group' THEN 1 ELSE 0 END) AS proposeNum,
+        SUM(CASE WHEN edge_table.type IN ('reject', 'approve') THEN 1 ELSE 0 END) AS feedbackNum
+    FROM 
+        edge_table
+    JOIN 
+        node_table ON node_table.id = edge_table.source
+    JOIN 
+        student ON student.id = node_table.student_id
+    JOIN 
+        \`group\` ON \`group\`.id = student.group_id
+    WHERE 
+        \`group\`.id = ${id}
+    GROUP BY 
+        student.id;
+      `;
+
+    return this.s.query<{
+      name: string;
+      proposeNum: string;
+      feedbackNum: string;
+    }>(sql);
+  }
+
+  public async selectEachMemberSummaryByGroupId(id: number) {
+    const sql = `
+    SELECT
+      t2.nickname AS \`name\`, count( t1.id ) AS summaryNum 
+    FROM
+      node_revise_record_table t1
+      JOIN student t2 ON t1.student_id = t2.id
+      JOIN \`group\` t3 ON t3.id = t2.group_id 
+    WHERE
+      t3.id = ${id} 
+    GROUP BY
+      t2.id;
+    `;
+
+    return this.s.query<{ name: string; summaryNum: string }>(sql);
+  }
+
+  public async selectEachMemberProposeFeedbackSummaryByGroupId(id: number) {
+    const [eachMemberProposeFeedback, eachMemberSummary] = await Promise.all([
+      this.selectEachMemberProposeFeedbackByGroupId(id),
+      this.selectEachMemberSummaryByGroupId(id),
+    ]);
+    // {value:XX, name:XX}
+    const feedbacks = eachMemberProposeFeedback.map((item) => ({
+      name: item.name,
+      value: +item.proposeNum,
+    }));
+    const proposes = eachMemberProposeFeedback.map((item) => ({
+      name: item.name,
+      value: +item.feedbackNum,
+    }));
+    const summarys = eachMemberSummary.map((item) => ({
+      name: item.name,
+      value: +item.summaryNum,
+    }));
+    return {
+      feedbacks,
+      proposes,
+      summarys,
+    };
+  }
 }

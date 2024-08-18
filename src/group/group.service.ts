@@ -142,4 +142,42 @@ export class GroupService extends SqlService {
       },
     };
   }
+
+  /**
+   *
+   * @param id studentId
+   * @description 根据学生id查询学生所在小组
+   */
+  public async queryStudentsGroup(id: number) {
+    const group = await this.groupCrud.selectGroupByStudentId(+id);
+
+    return {
+      data: {
+        group_id: group.id,
+        group_name: group.group_name,
+        group_code: group.group_code,
+        group_color: group.group_color,
+        group_description: group.group_description,
+        belong_class_id: group.belong_class_id,
+      },
+    };
+  }
+
+  /**
+   *
+   * @param id groupId
+   * @description 根据小组id查询小组成员提出观点、反馈数据
+   */
+  public async queryMemberProposeFeedbackData(id: number) {
+    const res =
+      await this.groupCrud.selectEachMemberProposeFeedbackSummaryByGroupId(id);
+
+    return {
+      data: {
+        feedbackList: res.feedbacks,
+        proposeList: res.proposes,
+        summaryList: res.summarys,
+      },
+    };
+  }
 }

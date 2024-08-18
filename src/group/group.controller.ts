@@ -20,4 +20,16 @@ export class GroupController {
   queryCollaborationData(@Query() queryInput: { group_id: number }) {
     return this.groupService.queryGroupCollData(queryInput.group_id);
   }
+
+  @Get('query')
+  queryStudentGroup(@Query() queryInput: { student_id: number }) {
+    return this.groupService.queryStudentsGroup(queryInput.student_id);
+  }
+
+  @Get('query_member_data')
+  queryMemberData(@Query() queryInput: { group_id: number }) {
+    return this.groupService.queryMemberProposeFeedbackData(
+      queryInput.group_id,
+    );
+  }
 }
