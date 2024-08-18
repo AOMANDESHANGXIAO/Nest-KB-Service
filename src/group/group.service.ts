@@ -106,4 +106,40 @@ export class GroupService extends SqlService {
       },
     };
   }
+
+  /**
+   *
+   * @param id groupId
+   * @description 根据小组id查询小组分享反馈、总结的数据
+   */
+  public async queryGroupCollData(id: number) {
+    const res = await this.groupCrud.queryShareFeedbackSummaryNumByGroupId(+id);
+
+    return {
+      data: {
+        list: [
+          {
+            iconName: 'discussion',
+            text: '参与了讨论',
+            num: res.feedback + res.share + res.summary,
+          },
+          {
+            iconName: 'share',
+            text: '分享了观点',
+            num: res.share,
+          },
+          {
+            iconName: 'feedback',
+            text: '反馈了观点',
+            num: res.feedback,
+          },
+          {
+            iconName: 'summary',
+            text: '总结了讨论',
+            num: res.summary,
+          },
+        ],
+      },
+    };
+  }
 }

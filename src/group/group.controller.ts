@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Query, Get } from '@nestjs/common';
 import { GroupService } from './group.service';
 import { CreateDto, JoinDto } from './Models/index';
 
@@ -14,5 +14,10 @@ export class GroupController {
   @Post('join')
   join(@Body() joinInput: JoinDto) {
     return this.groupService.join(joinInput);
+  }
+
+  @Get('query_collaboration_data')
+  queryCollaborationData(@Query() queryInput: { group_id: number }) {
+    return this.groupService.queryGroupCollData(queryInput.group_id);
   }
 }

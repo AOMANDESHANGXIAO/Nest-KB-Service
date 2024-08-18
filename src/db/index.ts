@@ -73,11 +73,42 @@ class SqlService {
     }
   }
 
+  // 简易的sql生成器，不涉及join时可用
+  generateSelectSql<T extends object>(
+    tablename: string,
+    columnObj: T,
+    where?:
+      | Array<{
+          field: string;
+          value: string | number;
+          charset?: '=' | '>' | '<' | '!=' | '>=' | '<=' | 'LIKE' | 'IN';
+        }>
+      | {
+          field: string;
+          value: string | number | string[] | number[];
+          charset?: '=' | '>' | '<' | '!=' | '>=' | '<=' | 'LIKE' | 'IN';
+        },
+  ) {
+    let whereSql: string = '';
+
+    if (where instanceof Array) {
+      whereSql = where
+        .map(
+          (item) =>
+            `${item.field} ${item.charset || '='} ${this.handleSqlValues(item.value)}`,
+        )
+        .join(' AND ');
+    } else if (typeof where === 'object') {
+      whereSql = `${where.field} ${where.charset || '='} ${this.handleSqlValues(where.value)}`;
+    }
+    whereSql && (whereSql = `WHERE ${whereSql}`);
+    return `SELECT ${Object.keys(columnObj).join(',')} FROM \`${tablename}\` ${whereSql}`;
+  }
+
   // 查询
   async query<T = any>(sql: string): Promise<T[]> {
     try {
       await this.getConn();
-      // console.log('this.conn ==>', this.conn);
       const [rows] = await this.conn.execute(sql);
       return rows as T[];
     } catch (err) {
@@ -107,6 +138,14 @@ class SqlService {
 
   handleWhereList(whereList: (string | number)[]) {
     return `[${whereList.map((item) => this.handleValue(item)).join(',')}]`;
+  }
+
+  handleSqlValues(values: (string | number)[] | string | number) {
+    if (typeof values === 'string' || typeof values === 'number') {
+      return this.handleValue(values);
+    } else {
+      return this.handleWhereList(values);
+    }
   }
 
   generateInsertSql<T>(
