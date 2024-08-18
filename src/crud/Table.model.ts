@@ -19,4 +19,11 @@ export interface GroupTable {
   belong_class_id: number;
 }
 
-export type Tables = 'student' | 'group';
+export interface DiscussTable {
+  id: number;
+  topic_content: string;
+  create_time: Date;
+  topic_for_class_id: number;
+}
+
+export type Tables = 'student' | 'group' | 'discussion';

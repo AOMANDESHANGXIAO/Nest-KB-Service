@@ -219,24 +219,17 @@ export class GroupService extends SqlService {
       feedback: 1,
       summary: 1,
     };
+    const bestStuIdRecords = {
+      summary: [] as number[],
+      propose: [] as number[],
+      feedback: [] as number[],
+    };
 
     res.forEach((item) => {
-      if (item.summaryNum >= maxRecord.summary) {
-        maxRecord.summary = item.summaryNum;
-      }
-      if (item.proposeNum >= maxRecord.propose) {
-        maxRecord.propose = item.proposeNum;
-      }
-      if (item.feedbackNum >= maxRecord.feedback) {
-        maxRecord.feedback = item.feedbackNum;
-      }
+      maxRecord.summary = Math.max(maxRecord.summary, item.summaryNum);
+      maxRecord.propose = Math.max(maxRecord.propose, item.proposeNum);
+      maxRecord.feedback = Math.max(maxRecord.feedback, item.feedbackNum);
     });
-
-    const bestStuIdRecords = {
-      summary: [],
-      propose: [],
-      feedback: [],
-    };
 
     res.forEach((item) => {
       if (item.summaryNum === maxRecord.summary) {
