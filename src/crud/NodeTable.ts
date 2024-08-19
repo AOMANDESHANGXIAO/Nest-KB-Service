@@ -108,4 +108,30 @@ export default class NodeCRUDer implements CRUDer {
       }
     }
   }
+
+  public async findGroupByTopicIdStudentId(
+    topic_id: number,
+    student_id: number,
+  ) {
+    // 依据student_id和topic_id查询小组节点的id
+    const sql = `
+    SELECT
+      t1.id,
+      t1.type,
+      t1.class_id,
+      t1.group_id,
+      t1.student_id,
+      t1.topic_id,
+      t1.created_time,
+      t1.version
+    FROM
+      node_table t1
+      JOIN \`group\` t2 ON t1.group_id = t2.id
+      JOIN student t3 ON t3.group_id = t2.id
+    WHERE
+      t3.id = ${student_id} and t1.type = 'group' and t1.topic_id = ${topic_id};
+        `;
+
+    return (await this.s.query<NodeTable>(sql))[0];
+  }
 }
