@@ -1,73 +1,123 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# 这个仓库存放了知识建构平台的后端服务源代码。
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+此服务使用Nest.js编写。
+Nest.js中文文档地址：https://nestjs.bootcss.com/
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 项目启动:
 
-## Description
+1. 安装项目依赖
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
-
-```bash
-$ pnpm install
+```shell
+pnpm install
 ```
 
-## Running the app
+2. 启动服务
 
-```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+```shell
+pnpm dev
 ```
 
-## Test
+如果项目启动成功，则可以在控制台看到输出:service is running on: http://localhost:3000/
 
-```bash
-# unit tests
-$ pnpm run test
 
-# e2e tests
-$ pnpm run test:e2e
+## 项目结构
 
-# test coverage
-$ pnpm run test:cov
+```
+knowledge-building-web
+├─ .eslintrc.js
+├─ .gitignore
+├─ .prettierrc
+├─ nest-cli.json
+├─ package.json
+├─ pnpm-lock.yaml
+├─ README.md
+├─ src              ## 项目的主目录
+│  ├─ app.controller.spec.ts
+│  ├─ app.controller.ts
+│  ├─ app.module.ts
+│  ├─ app.service.ts
+│  ├─ classroom
+│  │  ├─ classroom.controller.ts
+│  │  ├─ classroom.module.ts
+│  │  ├─ classroom.service.ts
+│  │  └─ Models
+│  │     ├─ index.ts
+│  │     └─ README.md
+│  ├─ config.ts # 项目的配置文件，包含数据库、运行端口、jwt配置
+│  ├─ crud # 封装一些复杂的数据库表增删改查操作
+│  │  ├─ ArguEdge.ts
+│  │  ├─ ArguNode.ts
+│  │  ├─ Classroom.ts
+│  │  ├─ Discussion.ts
+│  │  ├─ EdgeTable.ts
+│  │  ├─ Group.ts
+│  │  ├─ index.ts
+│  │  ├─ NodeTable.ts
+│  │  ├─ NodeTable.type.ts # 操作数据库表的类型
+│  │  ├─ README.md
+│  │  ├─ Student.ts
+│  │  └─ Table.model.ts # 整个项目中使用数据库表的定义
+│  ├─ db
+│  │  ├─ index.ts # 提供一个sqlService，封装了数据库的基本操作
+│  │  └─ README.md
+│  ├─ discuss
+│  │  ├─ discuss.controller.ts
+│  │  ├─ discuss.module.ts
+│  │  ├─ discuss.service.ts
+│  │  └─ Models
+│  │     └─ index.ts
+│  ├─ docs
+│  │  └─ record.md
+│  ├─ flow
+│  │  ├─ flow.controller.ts
+│  │  ├─ flow.module.ts
+│  │  ├─ flow.service.ts
+│  │  └─ Models
+│  │     └─ index.ts
+│  ├─ group
+│  │  ├─ group.controller.ts
+│  │  ├─ group.module.ts
+│  │  ├─ group.service.ts
+│  │  └─ Models
+│  │     └─ index.ts
+│  ├─ interceptors 
+│  │  ├─ filter.interceptor.ts # 全局错误过滤器中间件
+│  │  ├─ README.md
+│  │  └─ response.interceptor.ts # 全局响应拦截器中间件
+│  ├─ main.ts # 程序入口
+│  ├─ spec
+│  │  └─ index.ts
+│  ├─ token ## token中间件文件夹
+│  │  ├─ token.middleware.spec.ts # 测试
+│  │  └─ token.middleware.ts # token中间件
+│  ├─ user
+│  │  ├─ Models
+│  │  │  └─ index.ts
+│  │  ├─ user.controller.ts
+│  │  ├─ user.module.ts
+│  │  └─ user.service.ts
+│  └─ utils
+│     ├─ jwt.handler.ts
+│     └─ password.handler.ts
+├─ test
+│  ├─ app.e2e-spec.ts
+│  └─ jest-e2e.json
+├─ tsconfig.build.json
+└─ tsconfig.json
 ```
 
-## Support
+## 业务模块
+在Nest.js中，每个业务模块都是单独的目录，每个目录下都有自己的控制器、服务、模型等文件。
+例如，classroom目录下包含三个文件：classroom.controller.ts、classroom.service.ts、Models/index.ts。
+controller.ts文件定义了控制器，负责接收请求并传递给service层。service.ts文件定义了服务，包含一系列响应请求的方法。Models/index.ts文件定义了模型。
+看一眼应该就能知道每个模块能处理哪些请求。
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## 扩展模块
+使用我配置好的命令行即可生成一个业务模块，包含controller、service等文件。
+```
+pnpm r
+```
+这里的r是简写(resource)。
 
-## Stay in touch
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+That is all.
