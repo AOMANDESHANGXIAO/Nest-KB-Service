@@ -26,4 +26,34 @@ export interface DiscussTable {
   topic_for_class_id: number;
 }
 
-export type Tables = 'student' | 'group' | 'discussion';
+export enum NodeTypeEnum {
+  idea = 'idea',
+  topic = 'topic',
+  group = 'group',
+}
+
+export interface NodeTable {
+  id: number;
+  type: NodeTypeEnum;
+  class_id: number;
+  group_id: number;
+  student_id: number;
+  topic_id: number;
+  created_time: Date;
+  version: number;
+}
+
+export interface EdgeTable {
+  id: number;
+  source: number;
+  target: number;
+  topic_id: number;
+  type: 'approve' | 'reject' | 'group_to_discuss' | 'idea_to_group';
+}
+
+export type Tables =
+  | 'student'
+  | 'group'
+  | 'discussion'
+  | 'node_table'
+  | 'edge_table';

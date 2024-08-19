@@ -76,7 +76,7 @@ class SqlService {
   // 简易的sql生成器，不涉及join时可用
   generateSelectSql<T extends object>(
     tablename: string,
-    columnObj: T,
+    columns: Array<keyof T>,
     where?:
       | Array<{
           field: string;
@@ -102,7 +102,7 @@ class SqlService {
       whereSql = `${where.field} ${where.charset || '='} ${this.handleSqlValues(where.value)}`;
     }
     whereSql && (whereSql = `WHERE ${whereSql}`);
-    return `SELECT ${Object.keys(columnObj).join(',')} FROM \`${tablename}\` ${whereSql}`;
+    return `SELECT ${columns.join(',')} FROM \`${tablename}\` ${whereSql}`;
   }
 
   // 查询
@@ -129,6 +129,10 @@ class SqlService {
   }
 
   handleValue(v: string | number) {
+    if (v === 'NOW') {
+      return 'NOW()';
+    }
+
     if (typeof v === 'string') {
       return `'${v}'`;
     } else {
@@ -151,7 +155,7 @@ class SqlService {
   generateInsertSql<T>(
     tableName: Tables,
     columns: string[] | Array<keyof T>,
-    values: Array<(string | number)[]>,
+    values: Array<(string | number | 'NOW')[]>,
   ) {
     // 验证输入是否有效
     if (
