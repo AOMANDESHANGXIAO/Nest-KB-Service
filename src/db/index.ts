@@ -2,21 +2,23 @@ import config from '../config';
 import * as mysql from 'mysql2/promise';
 import { Tables } from 'src/crud/Table.model';
 
+let conncetion: mysql.Connection | null = null;
+
 class SqlService {
-  conn: mysql.Connection | null;
+  // conn: mysql.Connection | null;
   dbConfig: typeof config.db;
   constructor() {
-    this.conn = null;
+    // conncetion = null;
     this.dbConfig = config.db;
   }
 
   /**
-   * 获取数据库连接
+   * 建立连接
    */
-  async getConn() {
+  async setupConnection() {
     try {
-      if (!this.conn) {
-        this.conn = await mysql.createConnection(this.dbConfig);
+      if (!conncetion) {
+        conncetion = await mysql.createConnection(this.dbConfig);
         console.log('Connection success');
         return;
       }
@@ -31,8 +33,8 @@ class SqlService {
    */
   async beginTransaction() {
     try {
-      await this.getConn();
-      await this.conn.beginTransaction();
+      await this.setupConnection();
+      await conncetion.beginTransaction();
     } catch (err) {
       console.log('beginTransaction error', err);
     }
@@ -43,8 +45,8 @@ class SqlService {
    */
   async closeTransaction() {
     try {
-      await this.getConn();
-      await this.conn.commit();
+      await this.setupConnection();
+      await conncetion.commit();
     } catch (err) {
       console.log('closeTransaction', err);
     }
@@ -53,8 +55,8 @@ class SqlService {
   // 回滚
   async rollback() {
     try {
-      await this.getConn();
-      await this.conn.rollback();
+      await this.setupConnection();
+      await conncetion.rollback();
     } catch (err) {
       console.log('rollback', err);
       throw err;
@@ -66,8 +68,8 @@ class SqlService {
    */
   async commit() {
     try {
-      await this.getConn();
-      await this.conn.commit();
+      await this.setupConnection();
+      await conncetion.commit();
     } catch (err) {
       console.log('commit', err);
     }
@@ -108,8 +110,8 @@ class SqlService {
   // 查询
   async query<T = any>(sql: string): Promise<T[]> {
     try {
-      await this.getConn();
-      const [rows] = await this.conn.execute(sql);
+      await this.setupConnection();
+      const [rows] = await conncetion.execute(sql);
       return rows as T[];
     } catch (err) {
       throw err;
@@ -181,8 +183,8 @@ class SqlService {
   // 新增
   async insert(sql: string): Promise<string> {
     try {
-      await this.getConn();
-      const [rows] = await this.conn.execute(sql);
+      await this.setupConnection();
+      const [rows] = await conncetion.execute(sql);
       return (rows as unknown as { insertId: string }).insertId;
     } catch (err) {
       throw err;
@@ -233,8 +235,8 @@ class SqlService {
 
   async update(sql: string) {
     try {
-      await this.getConn();
-      const [rows] = await this.conn.execute(sql);
+      await this.setupConnection();
+      const [rows] = await conncetion.execute(sql);
       return rows;
     } catch (err) {
       throw err;
