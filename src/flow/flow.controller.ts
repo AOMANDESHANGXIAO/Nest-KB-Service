@@ -11,4 +11,10 @@ export class FlowController {
   public async queryFlow(@Query('topic_id') topic_id: number) {
     return await this.flowService.queryFlow(topic_id);
   }
+
+  @Get('query_content')
+  public async queryContent(@Query('node_id') node_id: number) {
+    // console.log('node_id ===>', node_id);
+    return await this.flowService.queryNodeContentById(+node_id);
+  }
 }

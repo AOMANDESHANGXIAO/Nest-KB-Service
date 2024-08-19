@@ -2,10 +2,8 @@ import config from '../config';
 import * as mysql from 'mysql2/promise';
 import { Tables } from 'src/crud/Table.model';
 
-let conncetion: mysql.Connection | null = null;
-
 class SqlService {
-  // conn: mysql.Connection | null;
+  conncetion: mysql.Connection | null;
   dbConfig: typeof config.db;
   constructor() {
     // conncetion = null;
@@ -17,8 +15,8 @@ class SqlService {
    */
   async setupConnection() {
     try {
-      if (!conncetion) {
-        conncetion = await mysql.createConnection(this.dbConfig);
+      if (!this.conncetion) {
+        this.conncetion = await mysql.createConnection(this.dbConfig);
         console.log('Connection success');
         return;
       }
@@ -34,7 +32,7 @@ class SqlService {
   async beginTransaction() {
     try {
       await this.setupConnection();
-      await conncetion.beginTransaction();
+      await this.conncetion.beginTransaction();
     } catch (err) {
       console.log('beginTransaction error', err);
     }
@@ -46,7 +44,7 @@ class SqlService {
   async closeTransaction() {
     try {
       await this.setupConnection();
-      await conncetion.commit();
+      await this.conncetion.commit();
     } catch (err) {
       console.log('closeTransaction', err);
     }
@@ -56,7 +54,7 @@ class SqlService {
   async rollback() {
     try {
       await this.setupConnection();
-      await conncetion.rollback();
+      await this.conncetion.rollback();
     } catch (err) {
       console.log('rollback', err);
       throw err;
@@ -69,7 +67,7 @@ class SqlService {
   async commit() {
     try {
       await this.setupConnection();
-      await conncetion.commit();
+      await this.conncetion.commit();
     } catch (err) {
       console.log('commit', err);
     }
@@ -111,7 +109,7 @@ class SqlService {
   async query<T = any>(sql: string): Promise<T[]> {
     try {
       await this.setupConnection();
-      const [rows] = await conncetion.execute(sql);
+      const [rows] = await this.conncetion.execute(sql);
       return rows as T[];
     } catch (err) {
       throw err;
@@ -147,6 +145,7 @@ class SqlService {
   }
 
   handleSqlValues(values: (string | number)[] | string | number) {
+    // console.log('values:', typeof values);
     if (typeof values === 'string' || typeof values === 'number') {
       return this.handleValue(values);
     } else {
@@ -184,7 +183,7 @@ class SqlService {
   async insert(sql: string): Promise<string> {
     try {
       await this.setupConnection();
-      const [rows] = await conncetion.execute(sql);
+      const [rows] = await this.conncetion.execute(sql);
       return (rows as unknown as { insertId: string }).insertId;
     } catch (err) {
       throw err;
@@ -236,7 +235,7 @@ class SqlService {
   async update(sql: string) {
     try {
       await this.setupConnection();
-      const [rows] = await conncetion.execute(sql);
+      const [rows] = await this.conncetion.execute(sql);
       return rows;
     } catch (err) {
       throw err;

@@ -51,9 +51,37 @@ export interface EdgeTable {
   type: 'approve' | 'reject' | 'group_to_discuss' | 'idea_to_group';
 }
 
+export enum ArguNodeTypeEnum {
+  data = 'data',
+  claim = 'claim',
+  warrant = 'warrant',
+  rebuttal = 'rebuttal',
+}
+
+export interface ArguNodeTable {
+  id: number;
+  type: ArguNodeTypeEnum;
+  content: string;
+  arguKey: number;
+  version: number;
+  arguId: string;
+}
+
+export interface ArguEdgeTable {
+  id: number;
+  source: string;
+  target: string;
+  type: string;
+  version: number;
+  arguId: string;
+  arguKey: number;
+}
+
 export type Tables =
   | 'student'
   | 'group'
   | 'discussion'
   | 'node_table'
-  | 'edge_table';
+  | 'edge_table'
+  | 'argunode'
+  | 'arguedge';
