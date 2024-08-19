@@ -1,12 +1,3 @@
-interface User {
-  id: number;
-  group_id: number;
-  class_id: number;
-  username: string;
-  password: string;
-  nickname: string;
-}
-
 interface UserUpdateDto {
   id: number;
   group_id?: number;
@@ -49,7 +40,6 @@ interface LinksData {
 }
 
 export {
-  User,
   UserUpdateDto,
   Login,
   Create,

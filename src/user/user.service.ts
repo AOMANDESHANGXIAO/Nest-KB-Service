@@ -1,39 +1,38 @@
 import { Injectable, HttpException } from '@nestjs/common';
 import { SqlService } from '../db/index';
+import { StudentTable } from 'src/crud/Table.model';
 import {
-  User,
   Login,
   Create,
   QueryCollaboration,
   LegendData,
   SeriesData,
   LinksData,
-} from '../models/User';
-import PasswordHandles from '../utils/password.handler';
+} from './Models/index';
+import StudentCRUDer from 'src/crud/Student';
+import PasswordHandler from '../utils/password.handler';
 import JwtHandler from '../utils/jwt.handler';
-import { StudentTable } from 'src/crud/Table.model';
 
 @Injectable()
 export class UserService extends SqlService {
-  pwdHandler: PasswordHandles;
+  pwdHandler: PasswordHandler;
   jwtHandler: JwtHandler;
+  studentCRUDer: StudentCRUDer;
   constructor() {
     super();
-    this.pwdHandler = new PasswordHandles();
+    this.pwdHandler = new PasswordHandler();
     this.jwtHandler = new JwtHandler();
+    this.studentCRUDer = new StudentCRUDer(this);
   }
 
   // 业务
   public async create({ username, password, nickname, class_id }: Create) {
-    const isExist = await this.findOneExist(username);
+    const isExist = await this.studentCRUDer.findOneExist(username);
     if (isExist) {
       throw new HttpException('用户名已存在', 400);
     } else {
-      this.beginTransaction();
-
-      const hashedPassword = await this.pwdHandler.hasdPassword(password);
-
-      try {
+      await this.transaction(async () => {
+        const hashedPassword = await this.pwdHandler.hasdPassword(password);
         await this.insert(
           this.generateInsertSql<StudentTable>(
             'student',
@@ -41,28 +40,24 @@ export class UserService extends SqlService {
             [[username, hashedPassword, nickname, class_id]],
           ),
         );
-        await this.closeTransaction();
-        await this.commit();
-        return {
-          message: '创建用户成功',
-          data: {},
-        };
-      } catch (err) {
-        throw new HttpException('创建用户失败', 400);
-      }
+      });
+      return {
+        message: '注册成功',
+        data: {},
+      };
     }
   }
 
   // 业务
   public async login({ username, password }: Login) {
     // 判断用户是否存在
-    const isExist = await this.findOneExist(username);
+    const isExist = await this.studentCRUDer.findOneExist(username);
     if (!isExist) {
       throw new HttpException('用户不存在', 400);
     }
 
     // 判断密码是否正确
-    const [user] = await this.findOneByUsername(username);
+    const [user] = await this.studentCRUDer.findOneByUsername(username);
 
     const isMatch = await this.pwdHandler.comparePassword(
       password,
@@ -74,7 +69,9 @@ export class UserService extends SqlService {
     }
 
     // 查询用户的小组信息
-    const [groupInfo] = await this.findUserGroupById(+user.group_id);
+    const [groupInfo] = await this.studentCRUDer.findUserGroupById(
+      +user.group_id,
+    );
 
     return {
       data: {
@@ -99,10 +96,10 @@ export class UserService extends SqlService {
 
     const [memberIdeaList, sumAndReviseList, userList, interactions] =
       await Promise.all([
-        this.findMembersIdeaNumbersById(group_id),
-        this.findMembersSummaryAndReviseById(group_id),
-        this.findAllByGroupId(group_id),
-        this.findInteractionByGroupId(group_id),
+        this.studentCRUDer.findMembersIdeaNumbersById(group_id),
+        this.studentCRUDer.findMembersSummaryAndReviseById(group_id),
+        this.studentCRUDer.findAllByGroupId(group_id),
+        this.studentCRUDer.findInteractionByGroupId(group_id),
       ]);
 
     const userMap = this.mapUserList(userList);
@@ -280,146 +277,5 @@ export class UserService extends SqlService {
       { name: '总结', max: maxValues[3] },
       { name: '修改', max: maxValues[4] },
     ];
-  }
-
-  private async findOneExist(key: number | string): Promise<boolean> {
-    if (typeof key === 'number') {
-      return false;
-    } else if (typeof key === 'string') {
-      const res = await this.findOneByUsername(key);
-      return res.length > 0;
-    }
-    return false;
-  }
-
-  private async findOneByUsername(username: string): Promise<User[]> {
-    const sql = `SELECT * FROM student WHERE username = '${username}'`;
-
-    const res = await this.query<User>(sql);
-
-    return res;
-  }
-
-  private async findUserGroupById(id: number) {
-    const sql = `
-    SELECT 
-    id, 
-    group_color,
-    group_name,
-    group_code
-    FROM \`group\` t1 WHERE t1.id = ${id}
-  `;
-
-    const result = await this.query<{
-      id: number;
-      group_color: string;
-      group_name: string;
-      group_code: string;
-    }>(sql);
-
-    return result;
-  }
-
-  private async findMembersIdeaNumbersById(group_id: number) {
-    const sql = `
-    SELECT
-      t1.student_id AS id,
-      t3.nickname AS NAME,
-      sum( CASE WHEN t2.type = 'idea_to_group' THEN 1 ELSE 0 END ) AS proposeNum,
-      sum( CASE WHEN t2.type = 'reject' THEN 1 ELSE 0 END ) AS rejectNum,
-      sum( CASE WHEN t2.type = 'approve' THEN 1 ELSE 0 END ) AS approveNum 
-    FROM
-      node_table t1
-      JOIN edge_table t2 ON t2.source = t1.id
-      JOIN student t3 ON t3.id = t1.student_id 
-      AND t3.group_id = ${group_id} 
-    GROUP BY
-      t1.student_id;`;
-
-    const res = await this.query<{
-      id: number;
-      NAME: string;
-      proposeNum: number;
-      rejectNum: number;
-      approveNum: number;
-    }>(sql);
-
-    return res;
-  }
-
-  private async findMembersSummaryAndReviseById(group_id: number) {
-    const sql = `
-    SELECT
-      t1.student_id AS id,
-      t3.nickname as stuName,
-      SUM( CASE WHEN t2.type = 'group' THEN 1 ELSE 0 END ) AS summaryNum,
-      Sum( CASE WHEN t2.type = 'idea' THEN 1 ELSE 0 END ) AS reviseNum 
-    FROM
-      node_revise_record_table t1
-      JOIN node_table t2 ON t2.type = 'group' 
-      OR t2.type = 'idea'
-      JOIN student t3 ON t3.id = t1.student_id 
-      AND t3.group_id = ${group_id} 
-      AND t2.id = t1.node_id 
-    GROUP BY
-      t1.student_id
-    `;
-
-    const res = await this.query<{
-      id: number;
-      stuName: string;
-      summaryNum: number;
-      reviseNum: number;
-    }>(sql);
-
-    return res;
-  }
-
-  private async findAllByGroupId(group_id: number) {
-    const sql = `
-    SELECT
-      t1.id,
-      t1.nickname stuName 
-    FROM
-      student t1 
-    WHERE
-      t1.group_id = ${group_id}`;
-
-    const res = await this.query<{
-      id: number;
-      stuName: string;
-    }>(sql);
-
-    return res;
-  }
-
-  private async findInteractionByGroupId(group_id: number) {
-    const sql = `
-  SELECT 
-      t1.source, 
-      t1.target, 
-      t3.nickname AS 'activer',
-      t5.nickname AS 'inActiver'
-  FROM 
-      edge_table t1
-  JOIN 
-      node_table t2 ON t1.source = t2.id
-  JOIN 
-      student t3 ON t3.id = t2.student_id
-  JOIN 
-      node_table t4 ON t1.target = t4.id
-  JOIN 
-      student t5 ON t5.id = t4.student_id
-  WHERE
-      t3.group_id = ${group_id} and t1.type != 'group_to_discuss';`;
-
-    const res = await this.query<{
-      source: number;
-      target: number;
-      activer: string;
-      inActiver: string;
-    }>(sql);
-
-    return res;
   }
 }
