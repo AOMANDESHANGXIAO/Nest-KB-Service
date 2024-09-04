@@ -21,8 +21,12 @@ export class FlowController {
 
   @Post('propose_idea')
   public async proposeIdea(@Body() args: CreateNewIdeaArgs) {
-    return await this.flowService.createNewIdea(args);
+    return await this.flowService.createNewIdea(args, 'idea');
   }
 
   // TODO: 1. 实现回复观点、总结小组讨论内容、修改自身想法的apis
+  @Post('reply_idea')
+  public async replyIdea(@Body() args: CreateNewIdeaArgs) {
+    return await this.flowService.createNewIdea(args, 'reply');
+  }
 }

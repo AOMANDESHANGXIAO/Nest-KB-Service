@@ -65,7 +65,7 @@ export default class NodeCRUDer implements CRUDer {
           t1.content,
           t2.nickname,
           t3.group_color,
-          t2.id 
+          t2.id student_id
         FROM
           node_table t1
           LEFT JOIN student t2 ON t1.student_id = t2.id

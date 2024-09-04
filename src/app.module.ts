@@ -8,7 +8,13 @@ import { ClassroomModule } from './classroom/classroom.module';
 import { FlowModule } from './flow/flow.module';
 
 @Module({
-  imports: [UserModule, GroupModule, DiscussModule, ClassroomModule, FlowModule],
+  imports: [
+    UserModule,
+    GroupModule,
+    DiscussModule,
+    ClassroomModule,
+    FlowModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

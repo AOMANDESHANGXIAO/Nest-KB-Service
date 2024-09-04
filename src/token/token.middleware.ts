@@ -8,20 +8,22 @@ export class TokenMiddleware implements NestMiddleware {
 
   async use(req: Request, res: Response, next: NextFunction) {
     // 获取请求的路由地址
+    const method = req.method;
+    if (method === 'OPTIONS') {
+      next();
+      return;
+    }
+
     const route = req.path;
     const token = req.headers['authorization'];
-
-    if (token) {
-      const jwtHandler = new JwtHandler();
-      try {
-        await jwtHandler.validate(route, token);
-        next();
-      } catch (err) {
-        // 需要将中间件的异常包装成一个promise，在promise中抛出异常
-        // 否则全局过滤器不会捕获这些异常
-        next(new HttpException('Invalid token', 401));
-      }
-    } else {
+    const jwtHandler = new JwtHandler();
+    // console.log('method', method, 'route', route, 'token', token);
+    try {
+      await jwtHandler.validate(route, token);
+      next();
+    } catch (err) {
+      // 需要将中间件的异常包装成一个promise，在promise中抛出异常
+      // 否则全局过滤器不会捕获这些异常
       next(new HttpException('Invalid token', 401));
     }
   }

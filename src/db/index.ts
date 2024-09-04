@@ -73,6 +73,13 @@ class SqlService {
     }
   }
 
+  public failResponse(msg: string) {
+    return {
+      message: msg,
+      success: false,
+    };
+  }
+
   // 简易的sql生成器，不涉及join时可用
   generateSelectSql<T extends object>(
     tablename: string,

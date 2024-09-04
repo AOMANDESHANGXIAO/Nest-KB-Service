@@ -1,4 +1,4 @@
-import { Injectable, HttpException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { SqlService } from '../db/index';
 import { CreateDto, JoinDto } from './Models/index';
 import StudentCRUDer from 'src/crud/Student';
@@ -76,13 +76,26 @@ export class GroupService extends SqlService {
   }
 
   public async join({ student_id, group_code }: JoinDto) {
-    const [group, user] = await Promise.all([
-      this.groupCrud.selectGroupByOneField('group_code', group_code),
+    // FIXME: pick group by student_id but not by group_code
+    const [checkedGroup, user] = await Promise.all([
+      this.groupCrud.selectGroupByStudentId(student_id),
       this.studentCrud.selectOneById(student_id),
     ]);
+    if (checkedGroup) {
+      return this.failResponse('Already in group');
+    }
 
-    if (group || !user) {
-      throw new HttpException('Already in group or user not found', 400);
+    if (!user) {
+      return this.failResponse('User not found');
+    }
+
+    const group = await this.groupCrud.selectGroupByOneField(
+      'group_code',
+      group_code,
+    );
+
+    if (!group) {
+      return this.failResponse('Group not found');
     }
 
     this.transaction(async () => {

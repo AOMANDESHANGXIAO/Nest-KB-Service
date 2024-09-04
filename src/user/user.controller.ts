@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Query, Get } from '@nestjs/common';
 import { UserService } from './user.service';
-import { Login, QueryCollaboration } from '../models/User';
-import { Create } from '../models/User';
+import { Login, QueryCollaboration } from './models/';
+import { Create } from './models/';
 
 @Controller('user')
 export class UserController {

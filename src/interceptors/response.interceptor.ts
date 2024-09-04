@@ -10,6 +10,7 @@ import { map } from 'rxjs/operators';
 interface Response {
   data: any;
   message?: string;
+  success?: boolean;
 }
 
 @Injectable()
@@ -20,7 +21,7 @@ export class ResponseInterceptor<T extends Response>
     return next.handle().pipe(
       map((response) => ({
         code: 200,
-        success: true,
+        success: 'success' in response ? response.success : true,
         message: response?.message || '请求成功',
         data: response.data,
       })),

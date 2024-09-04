@@ -15,6 +15,7 @@ async function bootstrap() {
 
   // 全局中间件, 处理token
   app.use(new TokenMiddleware().use);
+  app.enableCors();
 
   await app.listen(config.port);
 }

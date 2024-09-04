@@ -10,6 +10,9 @@ import { NodeTable, NodeTypeEnum } from 'src/crud/Table.model';
 import { EdgeTable, ArguNodeTable, ArguEdgeTable } from 'src/crud/Table.model';
 import { CreateNewIdeaArgs } from '../flow/Models/index';
 
+/**
+ * TODO: 实现回复观点API
+ */
 @Injectable()
 export class FlowService extends SqlService {
   nodeCruder: NodeCRUDer;
@@ -79,7 +82,17 @@ export class FlowService extends SqlService {
               y: 0,
             },
           })),
-          ...topics,
+          ...topics.map((item) => ({
+            id: String(item.id),
+            type: NodeTypeEnum.topic,
+            data: {
+              text: item.content,
+            },
+            position: {
+              x: 0,
+              y: 0,
+            },
+          })),
         ],
         edges: edges.map((item) => ({
           id: String(item.id),
@@ -144,12 +157,37 @@ export class FlowService extends SqlService {
     };
   }
 
-  public async createNewIdea(args: CreateNewIdeaArgs) {
+  public async createNewIdea(args: CreateNewIdeaArgs, type?: 'idea' | 'reply') {
     const { topic_id, student_id, nodes, edges } = args;
+
+    const createdEffect: Array<() => Promise<any>> = [];
+
+    let arguKey: string;
+
+    if (type === 'idea') {
+      const callback = async () => {
+        // 如果是提出观点,那么会自动连接到小组
+        return this.conncetIdeaToGroup(+arguKey, student_id, topic_id);
+      };
+      createdEffect.push(callback);
+    } else if (type === 'reply') {
+      const { replyNodeId, replyType } = args;
+      // 如果是回复观点那么要将创建的观点连接到被回复的观点
+      const callback = async () => {
+        return this.insert(
+          this.generateInsertSql(
+            'edge_table',
+            ['source', 'target', 'topic_id', 'type'],
+            [[arguKey, replyNodeId, topic_id, replyType]],
+          ),
+        );
+      };
+      createdEffect.push(callback);
+    }
 
     await this.transaction(async () => {
       // 创建数据插入NodeTable
-      const arguKey = await this.insert(
+      arguKey = await this.insert(
         this.generateInsertSql<NodeTable>(
           'node_table',
           ['topic_id', 'type', 'student_id', 'created_time', 'version'],
@@ -185,8 +223,13 @@ export class FlowService extends SqlService {
             ]),
           ),
         ),
-        this.conncetIdeaToGroup(+arguKey, student_id, topic_id),
       ]);
+      // 调用创建以后的影响
+      console.log('createdEffect', createdEffect);
+      // 依次调用
+      await Promise.all(
+        createdEffect.map((item) => item().catch((err) => console.log(err))),
+      );
     });
 
     return {
