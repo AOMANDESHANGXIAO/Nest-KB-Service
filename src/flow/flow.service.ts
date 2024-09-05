@@ -225,7 +225,7 @@ export class FlowService extends SqlService {
         ),
       ]);
       // 调用创建以后的影响
-      console.log('createdEffect', createdEffect);
+      // console.log('createdEffect', createdEffect);
       // 依次调用
       await Promise.all(
         createdEffect.map((item) => item().catch((err) => console.log(err))),
