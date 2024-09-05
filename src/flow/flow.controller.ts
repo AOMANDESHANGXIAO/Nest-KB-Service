@@ -1,7 +1,7 @@
 /**
  * 核心业务：控制流程图Service
  */
-import { Controller, Get, Post, Query, Body } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Patch } from '@nestjs/common';
 import { FlowService } from './flow.service';
 import { CreateNewIdeaArgs } from './Models/index';
 
@@ -28,5 +28,10 @@ export class FlowController {
   @Post('reply_idea')
   public async replyIdea(@Body() args: CreateNewIdeaArgs) {
     return await this.flowService.createNewIdea(args, 'reply');
+  }
+
+  @Patch('modify_idea')
+  public async modifyIdea(@Body() args: CreateNewIdeaArgs) {
+    return await this.flowService.createNewIdea(args, 'modify');
   }
 }

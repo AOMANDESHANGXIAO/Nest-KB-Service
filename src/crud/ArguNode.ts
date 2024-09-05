@@ -27,4 +27,10 @@ export default class ArguNodeCruder implements CRUDer {
       ),
     );
   }
+
+  public async queryByArguKey(arguKey: number) {
+    return await this.s.query<ArguNodeTable>(
+      `SELECT * FROM argunode WHERE arguKey = ${arguKey}`,
+    );
+  }
 }

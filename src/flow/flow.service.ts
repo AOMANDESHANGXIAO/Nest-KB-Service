@@ -157,12 +157,16 @@ export class FlowService extends SqlService {
     };
   }
 
-  public async createNewIdea(args: CreateNewIdeaArgs, type?: 'idea' | 'reply') {
+  public async createNewIdea(
+    args: CreateNewIdeaArgs,
+    type?: 'idea' | 'reply' | 'modify',
+  ) {
     const { topic_id, student_id, nodes, edges } = args;
 
     const createdEffect: Array<() => Promise<any>> = [];
 
     let arguKey: string;
+    let version: number = 1;
 
     if (type === 'idea') {
       const callback = async () => {
@@ -183,17 +187,37 @@ export class FlowService extends SqlService {
         );
       };
       createdEffect.push(callback);
+    } else if (type === 'modify') {
+      // 修改观点
+      const { modifyNodeId } = args;
+      // 查出被修改的观点的版本
+      version =
+        (await this.arguNodeCruder.FindLatestVersion(+modifyNodeId)) + 1;
+      // console.log('更新了!!论证节点的版本为', version);
     }
 
     await this.transaction(async () => {
       // 创建数据插入NodeTable
-      arguKey = await this.insert(
-        this.generateInsertSql<NodeTable>(
-          'node_table',
-          ['topic_id', 'type', 'student_id', 'created_time', 'version'],
-          [[topic_id, NodeTypeEnum.idea, student_id, 'NOW', 1]],
-        ),
-      );
+      if (type !== 'modify') {
+        arguKey = await this.insert(
+          this.generateInsertSql<NodeTable>(
+            'node_table',
+            ['topic_id', 'type', 'student_id', 'created_time', 'version'],
+            [[topic_id, NodeTypeEnum.idea, student_id, 'NOW', version]],
+          ),
+        );
+      } else {
+        // 修改时则依据传递过来的nodeId创建，arguKey
+        const { modifyNodeId } = args;
+        arguKey = String(modifyNodeId);
+        const res = await this.arguNodeCruder.queryByArguKey(+modifyNodeId);
+        if (res.length === 0) {
+          return this.failResponse('没有找到该论证节点');
+        }
+
+        // 判断arguKey是否存在
+      }
+
       // 创建数据插入ArguNodeTable,ArguEdgeTable
       await Promise.all([
         this.insert(
@@ -204,7 +228,7 @@ export class FlowService extends SqlService {
               item.data._type,
               item.data.inputValue,
               arguKey,
-              1,
+              version,
               item.id,
             ]),
           ),
@@ -218,7 +242,7 @@ export class FlowService extends SqlService {
               item.source,
               item.target,
               arguKey,
-              1,
+              version,
               item.id,
             ]),
           ),
