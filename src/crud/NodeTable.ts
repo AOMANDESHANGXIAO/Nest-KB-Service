@@ -90,20 +90,24 @@ export default class NodeCRUDer implements CRUDer {
         return await this.s.query<TopicType>(sql);
       }
       case 'group': {
+        // 增添查询小组结论的功能
         const sql = `
         SELECT
           t1.id node_id,
-          t1.content,
           t2.group_name,
           t2.group_color,
-          t2.id group_id
+          t2.id group_id,
+          t3.content
         FROM
           node_table t1
-          JOIN \`group\` t2 ON t2.id = t1.group_id 
+          JOIN \`group\` t2 ON t2.id = t1.group_id
+          LEFT JOIN argunode t3 ON t3.arguKey = t1.id 
+          AND t3.type = 'claim' 
+          AND t3.version = ( SELECT MAX( version ) FROM argunode sub WHERE sub.arguKey = t3.arguKey AND sub.type = t3.type ) 
         WHERE
-          t1.type = '${type}' 
+          t1.type = 'group' 
           AND t1.topic_id = ${topic_id};
-        `;
+          `;
         return await this.s.query<GroupType>(sql);
       }
     }

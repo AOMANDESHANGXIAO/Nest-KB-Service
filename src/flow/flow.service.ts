@@ -11,7 +11,7 @@ import { EdgeTable, ArguNodeTable, ArguEdgeTable } from 'src/crud/Table.model';
 import { CreateNewIdeaArgs } from '../flow/Models/index';
 
 /**
- * TODO: 实现回复观点API
+ * TODO: 实现发布小组观点功能API
  */
 @Injectable()
 export class FlowService extends SqlService {
@@ -73,9 +73,10 @@ export class FlowService extends SqlService {
             type: NodeTypeEnum.group,
             data: {
               groupName: item.group_name,
-              groupConclusion: item.content,
+              groupConclusion: item.content || '',
               bgc: item.group_color,
               group_id: item.group_id,
+              node_id: String(item.node_id), // 新增一个字段，用于传递小组节点的Node_id
             },
             positon: {
               x: 0,
@@ -107,7 +108,9 @@ export class FlowService extends SqlService {
 
   public async queryNodeContentById(node_id: number) {
     const lastestVersion = await this.arguNodeCruder.FindLatestVersion(node_id);
-    // console.log('lastestVersion', lastestVersion);
+    if (!lastestVersion) {
+      return this.failResponse('没有找到该论证节点');
+    }
     const [arguNodes, arguEdges] = await Promise.all([
       this.query<
         Pick<
@@ -279,5 +282,13 @@ export class FlowService extends SqlService {
         [[arguKey, groupId, 'idea_to_group', topic_id]],
       ),
     );
+  }
+
+  /**
+   *  依据Node的id查询小组节点的论证
+   */
+  public async queryGroupNodeContentByNodeId(node_id: string) {
+    // TODO: 规范，还要查询引用状态等，因此单独啦一个方法出来
+    return await this.queryNodeContentById(+node_id);
   }
 }

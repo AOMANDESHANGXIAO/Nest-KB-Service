@@ -5,6 +5,10 @@ import { Controller, Get, Post, Query, Body, Patch } from '@nestjs/common';
 import { FlowService } from './flow.service';
 import { CreateNewIdeaArgs } from './Models/index';
 
+/**
+ * TODO: 实现发布小组观点功能API
+ * 这个类用于控制 流程图 包括小组的论证图等路由
+ */
 @Controller('flow')
 export class FlowController {
   constructor(private readonly flowService: FlowService) {}
@@ -15,8 +19,12 @@ export class FlowController {
 
   @Get('query_content')
   public async queryContent(@Query('node_id') node_id: number) {
-    // console.log('node_id ===>', node_id);
     return await this.flowService.queryNodeContentById(+node_id);
+  }
+
+  @Get('query_group_content')
+  public async queryGroupContent(@Query('node_id') node_id: string) {
+    return await this.flowService.queryGroupNodeContentByNodeId(node_id);
   }
 
   @Post('propose_idea')
@@ -24,7 +32,6 @@ export class FlowController {
     return await this.flowService.createNewIdea(args, 'idea');
   }
 
-  // TODO: 1. 实现回复观点✅、总结小组讨论内容、修改自身想法的apis
   @Post('reply_idea')
   public async replyIdea(@Body() args: CreateNewIdeaArgs) {
     return await this.flowService.createNewIdea(args, 'reply');
