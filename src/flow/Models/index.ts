@@ -19,3 +19,11 @@ export interface CreateNewIdeaArgs {
     _type: string;
   }>;
 }
+
+export interface CreateNewGroupIdeaArgs
+  extends Omit<
+    CreateNewIdeaArgs,
+    'replyType' & 'replyNodeId' & 'modifyNodeId'
+  > {
+  groupNodeId: string; // 小组的Node id
+}

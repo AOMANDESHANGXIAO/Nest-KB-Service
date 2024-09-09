@@ -13,7 +13,7 @@ export default class ArguNodeCruder implements CRUDer {
     const [version] = await this.s.query<{ version: number }>(
       `SELECT MAX(version) version FROM argunode WHERE arguKey = ${arguKey}`,
     );
-    return version.version;
+    return version.version || 0;
   }
 
   public async createMany(

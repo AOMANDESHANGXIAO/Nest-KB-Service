@@ -3,7 +3,7 @@
  */
 import { Controller, Get, Post, Query, Body, Patch } from '@nestjs/common';
 import { FlowService } from './flow.service';
-import { CreateNewIdeaArgs } from './Models/index';
+import { CreateNewIdeaArgs, CreateNewGroupIdeaArgs } from './Models/index';
 
 /**
  * TODO: 实现发布小组观点功能API
@@ -40,5 +40,10 @@ export class FlowController {
   @Patch('modify_idea')
   public async modifyIdea(@Body() args: CreateNewIdeaArgs) {
     return await this.flowService.createNewIdea(args, 'modify');
+  }
+
+  @Post('propose_group_idea')
+  public async proposeGroupIdea(@Body() args: CreateNewGroupIdeaArgs) {
+    return await this.flowService.createGroupConclusion(args);
   }
 }

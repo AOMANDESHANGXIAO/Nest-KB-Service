@@ -8,7 +8,10 @@ import ArguEdgeCruder from 'src/crud/ArguEdge';
 import { IdeaType, TopicType, GroupType } from 'src/crud/NodeTable.type';
 import { NodeTable, NodeTypeEnum } from 'src/crud/Table.model';
 import { EdgeTable, ArguNodeTable, ArguEdgeTable } from 'src/crud/Table.model';
-import { CreateNewIdeaArgs } from '../flow/Models/index';
+import {
+  CreateNewIdeaArgs,
+  CreateNewGroupIdeaArgs,
+} from '../flow/Models/index';
 
 /**
  * TODO: 实现发布小组观点功能API
@@ -290,5 +293,56 @@ export class FlowService extends SqlService {
   public async queryGroupNodeContentByNodeId(node_id: string) {
     // TODO: 规范，还要查询引用状态等，因此单独啦一个方法出来
     return await this.queryNodeContentById(+node_id);
+  }
+
+  public async createGroupConclusion(args: CreateNewGroupIdeaArgs) {
+    const { nodes, edges, groupNodeId } = args;
+    const arguKey = args.groupNodeId;
+    const createdEffects: Array<() => Promise<any>> = [];
+
+    const version =
+      (await this.arguNodeCruder.FindLatestVersion(+groupNodeId)) + 1;
+
+    await this.transaction(async () => {
+      // 创建argumentNode和argumentEdge
+      await Promise.all([
+        this.insert(
+          this.generateInsertSql<ArguNodeTable>(
+            'argunode',
+            ['type', 'content', 'arguKey', 'version', 'arguId'],
+            nodes.map((item) => [
+              item.data._type,
+              item.data.inputValue,
+              arguKey,
+              version,
+              item.id,
+            ]),
+          ),
+        ),
+        this.insert(
+          this.generateInsertSql<ArguEdgeTable>(
+            'arguedge',
+            ['type', 'source', 'target', 'arguKey', 'version', 'arguId'],
+            edges.map((item) => [
+              item._type,
+              item.source,
+              item.target,
+              arguKey,
+              version,
+              item.id,
+            ]),
+          ),
+        ),
+      ]);
+
+      // 创建后的影响
+      await Promise.all(
+        createdEffects.map((item) => item().catch((err) => console.log(err))),
+      );
+    });
+
+    return {
+      data: {},
+    };
   }
 }
