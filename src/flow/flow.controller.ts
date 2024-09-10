@@ -46,4 +46,20 @@ export class FlowController {
   public async proposeGroupIdea(@Body() args: CreateNewGroupIdeaArgs) {
     return await this.flowService.createGroupConclusion(args);
   }
+
+  @Patch('modify_group_idea')
+  public async modifyGroupIdea(@Body() args: CreateNewGroupIdeaArgs) {
+    return await this.flowService.modifyGroupConslusion(args);
+  }
+
+  /**
+   * 学习分析仪表盘接口
+   */
+  @Get('dashboard')
+  public async queryDashboard(
+    @Query('topic_id') topic_id: number,
+    @Query('student_id') student_id: number,
+  ) {
+    return await this.flowService.queryDashboard(topic_id, student_id);
+  }
 }

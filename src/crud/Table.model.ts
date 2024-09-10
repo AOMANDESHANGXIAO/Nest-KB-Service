@@ -65,6 +65,7 @@ export interface ArguNodeTable {
   arguKey: number;
   version: number;
   arguId: string;
+  creator: number; // 2024/9/9 新增 creator 字段
 }
 
 export interface ArguEdgeTable {

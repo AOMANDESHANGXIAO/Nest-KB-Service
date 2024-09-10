@@ -27,3 +27,21 @@ export interface CreateNewGroupIdeaArgs
   > {
   groupNodeId: string; // 小组的Node id
 }
+
+export interface IndividualRadarData {
+  radar: {
+    indicator: Array<{ name: string; max: number }>;
+  };
+  legend: { data: Array<string> };
+  title: {
+    text: string;
+  };
+  series: {
+    name: string;
+    type: string;
+    data: Array<{
+      value: Array<number>;
+      name: string;
+    }>;
+  };
+}

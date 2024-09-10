@@ -12,9 +12,10 @@ import {
   CreateNewIdeaArgs,
   CreateNewGroupIdeaArgs,
 } from '../flow/Models/index';
+import { IndividualRadarData } from './Models';
 
 /**
- * TODO: 实现发布小组观点功能API
+ * TODO: 实现发布小组观点功能API✅
  */
 @Injectable()
 export class FlowService extends SqlService {
@@ -194,12 +195,9 @@ export class FlowService extends SqlService {
       };
       createdEffect.push(callback);
     } else if (type === 'modify') {
-      // 修改观点
       const { modifyNodeId } = args;
-      // 查出被修改的观点的版本
       version =
         (await this.arguNodeCruder.FindLatestVersion(+modifyNodeId)) + 1;
-      // console.log('更新了!!论证节点的版本为', version);
     }
 
     await this.transaction(async () => {
@@ -229,13 +227,14 @@ export class FlowService extends SqlService {
         this.insert(
           this.generateInsertSql<ArguNodeTable>(
             'argunode',
-            ['type', 'content', 'arguKey', 'version', 'arguId'],
+            ['type', 'content', 'arguKey', 'version', 'arguId', 'creator'],
             nodes.map((item) => [
               item.data._type,
               item.data.inputValue,
               arguKey,
               version,
               item.id,
+              student_id,
             ]),
           ),
         ),
@@ -296,7 +295,7 @@ export class FlowService extends SqlService {
   }
 
   public async createGroupConclusion(args: CreateNewGroupIdeaArgs) {
-    const { nodes, edges, groupNodeId } = args;
+    const { nodes, edges, groupNodeId, student_id } = args;
     const arguKey = args.groupNodeId;
     const createdEffects: Array<() => Promise<any>> = [];
 
@@ -309,13 +308,14 @@ export class FlowService extends SqlService {
         this.insert(
           this.generateInsertSql<ArguNodeTable>(
             'argunode',
-            ['type', 'content', 'arguKey', 'version', 'arguId'],
+            ['type', 'content', 'arguKey', 'version', 'arguId', 'creator'],
             nodes.map((item) => [
               item.data._type,
               item.data.inputValue,
               arguKey,
               version,
               item.id,
+              student_id,
             ]),
           ),
         ),
@@ -344,5 +344,97 @@ export class FlowService extends SqlService {
     return {
       data: {},
     };
+  }
+
+  public async modifyGroupConslusion(args: CreateNewGroupIdeaArgs) {
+    return await this.createGroupConclusion(args);
+  }
+
+  /**
+   *
+   * @returns 格式化工具函数
+   */
+  // FIXME: 前端渲染不出来
+  public formatter() {
+    const individualRadarFormatter = (
+      data: Array<{ type: string; count: number }>,
+    ): IndividualRadarData => {
+      const max = Math.max(...data.map((item) => item.count));
+      const nameTypeMap = {
+        data: '前提',
+        claim: '结论',
+        warrant: '辩护',
+        backing: '支撑',
+        qualifier: '限定词',
+        rebuttal: '反驳',
+      };
+      const indicator = data.map((item) => ({
+        name: nameTypeMap[item.type],
+        max,
+      }));
+      const series = {
+        name: '个人论证情况',
+        type: 'radar',
+        data: [
+          {
+            value: data.map((item) => item.count),
+            name: '个人论证情况',
+          },
+        ],
+      };
+      return {
+        title: {
+          text: '个人论证情况',
+        },
+        legend: {
+          data: ['个人论证情况'],
+        },
+        radar: {
+          indicator: indicator,
+        },
+        series,
+      };
+    };
+    return {
+      individualRadarFormatter,
+    };
+  }
+
+  public async queryDashboard(topic_id: number, student_id: number) {
+    const [individualArgument] = await Promise.all([
+      this.queryIndividualArgument(topic_id, student_id),
+    ]);
+
+    const { individualRadarFormatter } = this.formatter();
+    return {
+      data: {
+        radarOption: individualRadarFormatter(individualArgument),
+      },
+    };
+  }
+
+  /**
+   *
+   * @param topic_id
+   * @param student_id
+   * @description 依据主题和学生的id查询个人的论证情况
+   */
+  private async queryIndividualArgument(topic_id: number, student_id: number) {
+    const sql = `
+    SELECT 
+        a.type,
+        COUNT(*) AS count
+    FROM 
+        argunode a
+    JOIN 
+        node_table n ON a.arguKey = n.id
+    WHERE 
+        n.topic_id = ${topic_id}
+    AND 
+        n.student_id = ${student_id}
+    GROUP BY 
+        a.type;`;
+    const res = await this.query<{ type: string; count: number }>(sql);
+    return res;
   }
 }
