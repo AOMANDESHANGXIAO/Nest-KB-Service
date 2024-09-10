@@ -354,7 +354,6 @@ export class FlowService extends SqlService {
    *
    * @returns 格式化工具函数
    */
-  // FIXME: 前端渲染不出来
   public formatter() {
     const individualRadarFormatter = (
       data: Array<{ type: string; count: number }>,
@@ -386,29 +385,160 @@ export class FlowService extends SqlService {
         title: {
           text: '个人论证情况',
         },
-        legend: {
-          data: ['个人论证情况'],
-        },
         radar: {
           indicator: indicator,
         },
         series,
       };
     };
+
+    const peerInteractionFormatter = (
+      data: {
+        id: number;
+        type: string;
+        source: string;
+        source_student_id: number;
+        source_group_id: number;
+        source_nickname: string;
+        target: string;
+        target_student_id: number;
+        target_group_id: number;
+        target_nickname: string;
+      }[],
+      nicknames: { nickname: string }[],
+    ) => {
+      const MAX_LINE_STYLE_WIDTH = 40;
+
+      const dataOfSeries = nicknames.map((name) => ({
+        name: name.nickname,
+      }));
+      const sourceTargetMap = {
+        // 记录reject和approve的出现次数
+        reject: new Map<string, number>(),
+        approve: new Map<string, number>(),
+      };
+
+      data.forEach((item) => {
+        const key = `${item.source_nickname}-${item.target_nickname}`;
+        if (item.type === 'reject') {
+          sourceTargetMap.reject.set(
+            key,
+            (sourceTargetMap.reject.get(key) || 0) + 1,
+          );
+        } else {
+          sourceTargetMap.approve.set(
+            key,
+            (sourceTargetMap.approve.get(key) || 0) + 1,
+          );
+        }
+      });
+
+      const linksOfSerious: {
+        source: string;
+        target: string;
+        lineStyle?: { width: number };
+      }[] = [];
+
+      // 根据nicknames生成初始links,nickname两两连接
+      for (let i = 0; i < nicknames.length; i++) {
+        for (let j = i + 1; j < nicknames.length; j++) {
+          linksOfSerious.push({
+            source: nicknames[i].nickname,
+            target: nicknames[j].nickname,
+          });
+        }
+      }
+      // 拿到approve和reject相加的最大数,注意是相加
+
+      const maxLinks = linksOfSerious.map((item) => {
+        const key = `${item.source}-${item.target}`;
+        const reverseKey = `${item.target}-${item.source}`;
+        const total =
+          (sourceTargetMap.approve.get(key) || 0) +
+          (sourceTargetMap.reject.get(key) || 0) +
+          (sourceTargetMap.approve.get(reverseKey) || 0) +
+          (sourceTargetMap.reject.get(reverseKey) || 0);
+        return total;
+      });
+
+      let maxInteractCount = 0;
+
+      maxLinks.forEach((item) => {
+        maxInteractCount = Math.max(maxInteractCount, item);
+      });
+      // 根据approve和reject的连接强度设置lineStyle的width
+      linksOfSerious.forEach((item) => {
+        const key = `${item.source}-${item.target}`;
+        const reverseKey = `${item.target}-${item.source}`;
+        const approveCount =
+          (sourceTargetMap.approve.get(key) || 0) +
+          (sourceTargetMap.approve.get(reverseKey) || 0);
+        const rejectCount =
+          (sourceTargetMap.reject.get(key) || 0) +
+          (sourceTargetMap.reject.get(reverseKey) || 0);
+        item.lineStyle = {
+          width:
+            ((approveCount + rejectCount) / maxInteractCount) *
+            MAX_LINE_STYLE_WIDTH,
+        };
+      });
+
+      return {
+        title: {
+          text: '小组互动图',
+        },
+        tooltip: {},
+        animationDurationUpdate: 1500,
+        animationEasingUpdate: 'quinticInOut',
+        series: [
+          {
+            type: 'graph',
+            layout: 'circular',
+            symbolSize: 50,
+            roam: true,
+            label: {
+              show: true,
+            },
+            edgeSymbol: ['none', 'none'],
+            edgeSymbolSize: [4, 10],
+            edgeLabel: {
+              fontSize: 20,
+            },
+            data: dataOfSeries,
+            links: linksOfSerious,
+            lineStyle: {
+              opacity: 0.9,
+              curveness: 0,
+            },
+          },
+        ],
+      };
+    };
+
     return {
       individualRadarFormatter,
+      peerInteractionFormatter,
     };
   }
 
-  public async queryDashboard(topic_id: number, student_id: number) {
-    const [individualArgument] = await Promise.all([
-      this.queryIndividualArgument(topic_id, student_id),
-    ]);
+  public async queryDashboard(
+    topic_id: number,
+    student_id: number,
+    group_id: number,
+  ) {
+    const [individualArgument, peerInteraction, nicknameOfGroup] =
+      await Promise.all([
+        this.queryIndividualArgument(topic_id, student_id),
+        this.queryPeerInteraction(topic_id, group_id),
+        this.queryGroupNicknames(group_id),
+      ]);
 
-    const { individualRadarFormatter } = this.formatter();
+    const { individualRadarFormatter, peerInteractionFormatter } =
+      this.formatter();
     return {
       data: {
         radarOption: individualRadarFormatter(individualArgument),
+        graphOption: peerInteractionFormatter(peerInteraction, nicknameOfGroup),
       },
     };
   }
@@ -436,5 +566,69 @@ export class FlowService extends SqlService {
         a.type;`;
     const res = await this.query<{ type: string; count: number }>(sql);
     return res;
+  }
+
+  /**
+   *
+   * @param topic_id
+   * @param student_id
+   * @description 依据主题和学生的id查询该学生小组的互动情况
+   */
+  private async queryPeerInteraction(topic_id: number, gruop_id: number) {
+    const sql = `
+    SELECT 
+        e.id,
+        e.type,
+        e.source,
+        n1.student_id AS source_student_id,
+        s1.id AS source_group_id,
+        s1.nickname AS source_nickname,
+        e.target,
+        n2.student_id AS target_student_id,
+        s2.group_id AS target_group_id,
+        s2.nickname AS target_nickname
+    FROM 
+        edge_table e
+    JOIN 
+        node_table n1 ON e.source = n1.id
+    JOIN 
+        student s1 ON n1.student_id = s1.id
+    JOIN 
+        node_table n2 ON e.target = n2.id
+    JOIN 
+        student s2 ON n2.student_id = s2.id
+    WHERE 
+        e.topic_id = ${topic_id}
+    AND 
+        (e.type = 'reject' OR e.type = 'approve')
+    AND 
+        s1.group_id = ${gruop_id}
+    AND 
+        s2.group_id = s1.group_id;`;
+
+    const res = await this.query<{
+      id: number;
+      type: string;
+      source: string;
+      source_student_id: number;
+      source_group_id: number;
+      source_nickname: string;
+      target: string;
+      target_student_id: number;
+      target_group_id: number;
+      target_nickname: string;
+    }>(sql);
+    return res;
+  }
+
+  private async queryGroupNicknames(group_id: number) {
+    const sql = `
+    SELECT
+      s.nickname 
+    FROM
+      student s 
+    WHERE
+      s.group_id = ${group_id};`;
+    return await this.query<{ nickname: string }>(sql);
   }
 }

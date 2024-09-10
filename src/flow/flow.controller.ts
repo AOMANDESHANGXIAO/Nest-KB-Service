@@ -59,7 +59,12 @@ export class FlowController {
   public async queryDashboard(
     @Query('topic_id') topic_id: number,
     @Query('student_id') student_id: number,
+    @Query('group_id') group_id: number,
   ) {
-    return await this.flowService.queryDashboard(topic_id, student_id);
+    return await this.flowService.queryDashboard(
+      topic_id,
+      student_id,
+      group_id,
+    );
   }
 }

@@ -32,7 +32,7 @@ export interface IndividualRadarData {
   radar: {
     indicator: Array<{ name: string; max: number }>;
   };
-  legend: { data: Array<string> };
+  legend?: { data: Array<string> };
   title: {
     text: string;
   };
