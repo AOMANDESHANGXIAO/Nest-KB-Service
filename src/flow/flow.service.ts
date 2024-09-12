@@ -407,11 +407,12 @@ export class FlowService extends SqlService {
       }[],
       nicknames: { nickname: string }[],
     ) => {
-      const MAX_LINE_STYLE_WIDTH = 40;
+      const MAX_LINE_STYLE_WIDTH = 20;
 
       const dataOfSeries = nicknames.map((name) => ({
         name: name.nickname,
       }));
+
       const sourceTargetMap = {
         // 记录reject和approve的出现次数
         reject: new Map<string, number>(),
@@ -515,30 +516,129 @@ export class FlowService extends SqlService {
       };
     };
 
+    const replyAndModifyFormatter = (
+      data: {
+        replyCount: {
+          nickname: string;
+          proposeNum: number;
+          rejectNum: number;
+          approveNum: number;
+        }[];
+        modifyCount: {
+          student_id: number;
+          nickname: string;
+          total_modify_count: string;
+        }[];
+      },
+      nicknames: { nickname: string }[],
+    ) => {
+      const { replyCount, modifyCount } = data;
+      const createMap = (arr: { nickname: string }[], key: string) => {
+        const map = new Map();
+        arr.forEach((item) => {
+          map.set(item.nickname, item[key]);
+        });
+        return map;
+      };
+      const [proposeMap, rejectMap, approveMap, modifyMap] = [
+        createMap(replyCount, 'proposeNum'),
+        createMap(replyCount, 'rejectNum'),
+        createMap(replyCount, 'approveNum'),
+        createMap(modifyCount, 'total_modify_count'),
+      ];
+      // console.log(proposeMap, rejectMap, approveMap, modifyMap);
+      // console.log()
+      const getCount = (m: Map<string, string | number>, nickname: string) => {
+        return Number(m.get(nickname)) || 0;
+      };
+
+      return {
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            // Use axis to trigger tooltip
+            type: 'shadow', // 'shadow' as default; can also be 'line' or 'shadow'
+          },
+        },
+        legend: {},
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true,
+        },
+        xAxis: {
+          type: 'category',
+          data: ['提出', '修改', '支持', '反对'],
+        },
+        yAxis: {
+          type: 'value',
+        },
+        series: nicknames.map((item) => {
+          return {
+            name: item.nickname,
+            type: 'bar',
+            stack: 'total',
+            label: {
+              show: true,
+            },
+            emphasis: {
+              focus: 'series',
+            },
+            data: [
+              getCount(proposeMap, item.nickname),
+              getCount(modifyMap, item.nickname),
+              getCount(approveMap, item.nickname),
+              getCount(rejectMap, item.nickname),
+            ],
+          };
+        }),
+      };
+    };
+
     return {
       individualRadarFormatter,
       peerInteractionFormatter,
+      replyAndModifyFormatter,
     };
   }
 
+  /**
+   *
+   * @param topic_id
+   * @param student_id
+   * @param group_id
+   * @returns
+   * @todo 查询小组成员的修改、总结、修改等状态，生成堆栈格式数据
+   */
   public async queryDashboard(
     topic_id: number,
     student_id: number,
     group_id: number,
   ) {
-    const [individualArgument, peerInteraction, nicknameOfGroup] =
-      await Promise.all([
-        this.queryIndividualArgument(topic_id, student_id),
-        this.queryPeerInteraction(topic_id, group_id),
-        this.queryGroupNicknames(group_id),
-      ]);
+    const [
+      individualArgument,
+      peerInteraction,
+      nicknameOfGroup,
+      replyAndModify,
+    ] = await Promise.all([
+      this.queryIndividualArgument(topic_id, student_id),
+      this.queryPeerInteraction(topic_id, group_id),
+      this.queryGroupNicknames(group_id),
+      this.queryReplyAndModifyData(topic_id, group_id),
+    ]);
 
-    const { individualRadarFormatter, peerInteractionFormatter } =
-      this.formatter();
+    const {
+      individualRadarFormatter,
+      peerInteractionFormatter,
+      replyAndModifyFormatter,
+    } = this.formatter();
+
     return {
       data: {
         radarOption: individualRadarFormatter(individualArgument),
         graphOption: peerInteractionFormatter(peerInteraction, nicknameOfGroup),
+        barOption: replyAndModifyFormatter(replyAndModify, nicknameOfGroup),
       },
     };
   }
@@ -630,5 +730,69 @@ export class FlowService extends SqlService {
     WHERE
       s.group_id = ${group_id};`;
     return await this.query<{ nickname: string }>(sql);
+  }
+
+  private async queryReplyAndModifyData(topic_id: number, group_id: number) {
+    const sqlReplyCount = `
+    SELECT
+      student.nickname AS nickname,
+      SUM( CASE WHEN edge_table.type = 'idea_to_group' THEN 1 ELSE 0 END ) AS proposeNum,
+      SUM( CASE WHEN edge_table.type = 'reject' THEN 1 ELSE 0 END ) AS rejectNum,
+      SUM( CASE WHEN edge_table.type = 'approve' THEN 1 ELSE 0 END ) AS approveNum
+    FROM
+      edge_table
+      JOIN node_table ON node_table.id = edge_table.source
+      JOIN student ON student.id = node_table.student_id
+      JOIN \`group\` ON \`group\`.id = student.group_id 
+    WHERE
+      \`group\`.id = ${group_id} 
+    GROUP BY
+      student.id;`;
+
+    const sqlModifyCount = `
+    SELECT
+      student_id,
+      nickname,
+      SUM( modify_count ) AS total_modify_count 
+    FROM
+      (
+      SELECT
+        a.arguKey,
+        n.student_id,
+        s.nickname,
+        MAX( a.version ) - MIN( a.version ) + 1 AS modify_count 
+      FROM
+        argunode a
+        JOIN node_table n ON n.id = arguKey
+        JOIN student s ON s.id = n.student_id 
+      WHERE
+        n.topic_id = ${topic_id}
+        AND s.group_id = ${group_id}
+        AND n.type = 'idea' 
+      GROUP BY
+        a.arguKey,
+        n.student_id
+      ) AS subquery 
+    GROUP BY
+      student_id;`;
+
+    const [replyCount, modifyCount] = await Promise.all([
+      this.query<{
+        nickname: string;
+        proposeNum: number;
+        rejectNum: number;
+        approveNum: number;
+      }>(sqlReplyCount),
+      this.query<{
+        student_id: number;
+        nickname: string;
+        total_modify_count: string;
+      }>(sqlModifyCount),
+    ]);
+
+    return {
+      replyCount,
+      modifyCount,
+    };
   }
 }
