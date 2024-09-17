@@ -14,6 +14,8 @@ const config = {
       '/user/signin',
       '/user/signup',
       '/classroom/queryClassroomList',
+      '/auth/login',
+      '/auth/register',
       '/admin/sign/signin',
       '/admin/sign/signup',
     ],

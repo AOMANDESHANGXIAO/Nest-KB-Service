@@ -78,6 +78,13 @@ export interface ArguEdgeTable {
   arguKey: number;
 }
 
+export interface AdminTable {
+  id: number;
+  username: string;
+  password: string;
+  nickname: string;
+}
+
 export type Tables =
   | 'student'
   | 'group'
@@ -85,4 +92,5 @@ export type Tables =
   | 'node_table'
   | 'edge_table'
   | 'argunode'
-  | 'arguedge';
+  | 'arguedge'
+  | 'admin';

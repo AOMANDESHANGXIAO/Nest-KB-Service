@@ -6,6 +6,7 @@ import { GroupModule } from './group/group.module';
 import { DiscussModule } from './discuss/discuss.module';
 import { ClassroomModule } from './classroom/classroom.module';
 import { FlowModule } from './flow/flow.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { FlowModule } from './flow/flow.module';
     DiscussModule,
     ClassroomModule,
     FlowModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
