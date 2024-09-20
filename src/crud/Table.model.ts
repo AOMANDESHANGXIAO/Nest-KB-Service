@@ -84,7 +84,11 @@ export interface AdminTable {
   password: string;
   nickname: string;
 }
-
+export interface Class_ {
+  id: number;
+  class_name: string;
+  status: 1;
+}
 export type Tables =
   | 'student'
   | 'group'
@@ -93,4 +97,5 @@ export type Tables =
   | 'edge_table'
   | 'argunode'
   | 'arguedge'
-  | 'admin';
+  | 'admin'
+  | 'class';
