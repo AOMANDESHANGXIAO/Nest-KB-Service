@@ -22,8 +22,10 @@ export interface GroupTable {
 export interface DiscussTable {
   id: number;
   topic_content: string;
-  create_time: Date;
+  created_time: Date;
+  close_time: Date;
   topic_for_class_id: number;
+  status: 'PROPOSE' | 'FEEDBACK' | 'SUMMARY' | 'CLOSE';
 }
 
 export enum NodeTypeEnum {

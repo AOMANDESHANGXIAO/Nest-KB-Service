@@ -1,15 +1,22 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body } from '@nestjs/common';
 import { DiscussService } from './discuss.service';
+import { QueryParams } from 'src/crud';
+type CreateDiscussion = {
+  topic_content: string;
+  created_user_id: number;
+  topic_for_class_id: number;
+};
+export type { CreateDiscussion };
 
 @Controller('discuss')
 export class DiscussController {
   constructor(private readonly discussService: DiscussService) {}
 
   @Get('queryTopic')
-  findAll(
+  findAllByClassId(
     @Query() queryInput: { class_id: number; content?: string; sort?: 1 | 0 },
   ) {
-    return this.discussService.findAll(queryInput);
+    return this.discussService.findAllByClassId(queryInput);
   }
 
   /**
@@ -20,5 +27,18 @@ export class DiscussController {
   @Get('topic_content')
   public async queryTopicContent(@Query('id') id: number) {
     return this.discussService.findOne(id);
+  }
+
+  @Post('create')
+  public async create(
+    @Body()
+    params: CreateDiscussion,
+  ) {
+    return this.discussService.create(params);
+  }
+
+  @Get('all')
+  public async findAll(@Query() params: QueryParams) {
+    return this.discussService.findAll(params);
   }
 }

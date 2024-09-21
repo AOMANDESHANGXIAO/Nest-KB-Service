@@ -19,6 +19,7 @@ class AuthTool {
       username: string;
       nickname: string;
       password: string;
+      id: number;
     }>(sql);
     return res;
   }
@@ -63,6 +64,7 @@ export class AuthService extends SqlService {
         token,
         nickname: admin.nickname,
         username: admin.username,
+        id: admin.id,
       },
       message: '登录成功',
     };

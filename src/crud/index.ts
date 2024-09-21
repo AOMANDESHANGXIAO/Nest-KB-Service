@@ -4,3 +4,8 @@ import { SqlService } from 'src/db';
 export interface CRUDer {
   s: SqlService;
 }
+export interface QueryParams {
+  page: number;
+  pageSize: number;
+  sort?: 'ASC' | 'DESC';
+}
