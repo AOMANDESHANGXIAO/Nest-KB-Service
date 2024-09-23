@@ -212,7 +212,7 @@ class SqlService {
   }
 
   generateUpdateSql<T>(
-    tableName: string,
+    tableName: Tables,
     columValues: Array<{ column: string | keyof T; value: string | number }>,
     where: Array<{
       column: string | keyof T;

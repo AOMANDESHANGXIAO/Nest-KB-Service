@@ -1,12 +1,18 @@
-import { Controller, Get, Query, Post, Body } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body, Patch } from '@nestjs/common';
 import { DiscussService } from './discuss.service';
 import { QueryParams } from 'src/crud';
+import { DiscussAction } from 'src/crud/Table.model';
 type CreateDiscussion = {
   topic_content: string;
   created_user_id: number;
   topic_for_class_id: number;
 };
-export type { CreateDiscussion };
+type UpdateDiscussion = {
+  topicId: number;
+  status: DiscussAction['action'];
+  operatorId: number;
+};
+export type { CreateDiscussion, UpdateDiscussion };
 
 @Controller('discuss')
 export class DiscussController {
@@ -40,5 +46,15 @@ export class DiscussController {
   @Get('all')
   public async findAll(@Query() params: QueryParams) {
     return this.discussService.findAll(params);
+  }
+
+  @Patch('update')
+  public async update(@Body() params: UpdateDiscussion) {
+    return this.discussService.updateDiscuss(params);
+  }
+
+  @Patch('rate')
+  public async rate() {
+    return this.discussService.rate();
   }
 }

@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import { SqlService } from '../db';
-import { DiscussTable } from 'src/crud/Table.model';
+import { DiscussTable, DiscussAction } from 'src/crud/Table.model';
 import { FindAllQueryInput } from './Models/index';
 import DiscussionCRUDer from '../crud/Discussion';
 import CreateDiscussion from './utils/createDiscussion';
 import { QueryParams } from 'src/crud';
+
 @Injectable()
 export class DiscussService extends SqlService {
   discussCruder: DiscussionCRUDer;
@@ -13,10 +14,6 @@ export class DiscussService extends SqlService {
     this.discussCruder = new DiscussionCRUDer(this);
   }
 
-  /**
-   * TODO: 创建一个讨论话题✅
-   * @returns
-   */
   public async create({
     topic_content,
     created_user_id,
@@ -174,8 +171,54 @@ export class DiscussService extends SqlService {
     };
   }
 
-  updateDiscuss(id: number) {
-    return `This action updates a #${id} discuss`;
+  /**
+   * 推进一个讨论
+   * @returns
+   */
+  public async updateDiscuss({
+    topicId,
+    status,
+    operatorId,
+  }: {
+    topicId: number;
+    status: DiscussAction['action'];
+    operatorId: number;
+  }) {
+    // validate
+    if (topicId == null || status == null || operatorId == null) {
+      throw new HttpException('参数不全', 400);
+    }
+    const STATUS_LIST = ['feedback', 'summary', 'close'];
+    if (!STATUS_LIST.includes(status)) {
+      throw new HttpException('Status参数不合法', 400);
+    }
+    await this.transaction(async () => {
+      // 1. 首先更新discuss表
+      await this.update(
+        this.generateUpdateSql(
+          'discussion',
+          [{ column: 'status', value: status }],
+          [{ column: 'id', value: topicId, charset: '=' }],
+        ),
+      );
+      // 2. 更新discuss_action表
+      await this.insert(
+        this.generateInsertSql<DiscussAction>(
+          'discuss_action',
+          ['action', 'discuss_id', 'created_time', 'operator_id'],
+          [[status, topicId, 'NOW', operatorId]],
+        ),
+      );
+    });
+    return {
+      data: {},
+      message: '操作成功',
+    };
+  }
+
+  // TODO: 实现对话题进行评分API
+  async rate() {
+    return 'This action rate a discuss';
   }
 
   remove(id: number) {

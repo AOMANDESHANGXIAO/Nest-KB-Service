@@ -1,7 +1,7 @@
 import { SqlService } from 'src/db';
 // import { GroupTable } from './Table.model';
 import { CRUDer } from './index';
-
+import { DiscussTable } from './Table.model';
 export default class DiscussionCRUDer implements CRUDer {
   s: SqlService;
   constructor(serviceInstance: SqlService) {
@@ -17,6 +17,7 @@ export default class DiscussionCRUDer implements CRUDer {
     SELECT
       t1.id,
       t1.topic_content,
+      t1.status,
       t1.created_time,
       t2.nickname 
     FROM
@@ -34,6 +35,7 @@ export default class DiscussionCRUDer implements CRUDer {
       topic_content: string;
       created_time: Date;
       nickname: string;
+      status: DiscussTable['status'];
     }>(sql);
   }
 }
