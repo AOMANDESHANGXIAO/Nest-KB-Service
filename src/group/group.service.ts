@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import { SqlService } from '../db/index';
 import { CreateDto, JoinDto } from './Models/index';
 import StudentCRUDer from 'src/crud/Student';
 import GroupCRUDer from 'src/crud/Group';
-import { GroupTable } from 'src/crud/Table.model';
+import { GroupTable, StudentTable } from 'src/crud/Table.model';
 
 @Injectable()
 export class GroupService extends SqlService {
@@ -292,6 +292,59 @@ export class GroupService extends SqlService {
             },
           };
         }),
+      },
+    };
+  }
+
+  public async queryGroupListByClassId(id: number) {
+    if (!id || typeof +id !== 'number') {
+      throw new HttpException('参数不合法', 400);
+    }
+
+    const sql = `
+    SELECT
+      g.id,
+      g.group_name,
+      g.group_description,
+      g.group_code,
+      g.group_color 
+    FROM
+      \`group\` g 
+    WHERE
+      g.belong_class_id = ${id}
+    `;
+
+    const list = await this.query<Omit<GroupTable, 'belong_class_id'>>(sql);
+
+    return {
+      data: {
+        list: list.map((item) => ({
+          ...item,
+        })),
+      },
+    };
+  }
+
+  public async queryStudentsOfGroup(id: number) {
+    if (!id || typeof +id !== 'number') {
+      throw new HttpException('参数不合法', 400);
+    }
+    const sql = `
+    SELECT
+      s.id,
+      s.group_id,
+      s.class_id,
+      s.username,
+      s.nickname 
+    FROM
+      student s 
+    WHERE
+      s.group_id = ${id}
+    `;
+    const list = await this.query<Omit<StudentTable, 'password'>>(sql);
+    return {
+      data: {
+        list,
       },
     };
   }

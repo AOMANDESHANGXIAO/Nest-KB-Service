@@ -1,18 +1,12 @@
 import { Controller, Get, Query, Post, Body, Patch } from '@nestjs/common';
 import { DiscussService } from './discuss.service';
 import { QueryParams } from 'src/crud';
-import { DiscussAction } from 'src/crud/Table.model';
-type CreateDiscussion = {
-  topic_content: string;
-  created_user_id: number;
-  topic_for_class_id: number;
-};
-type UpdateDiscussion = {
-  topicId: number;
-  status: DiscussAction['action'];
-  operatorId: number;
-};
-export type { CreateDiscussion, UpdateDiscussion };
+import type {
+  CreateDiscussionInput,
+  UpdateDiscussion,
+  QueryRate,
+  UpdateRateInput,
+} from './Models';
 
 @Controller('discuss')
 export class DiscussController {
@@ -38,7 +32,7 @@ export class DiscussController {
   @Post('create')
   public async create(
     @Body()
-    params: CreateDiscussion,
+    params: CreateDiscussionInput,
   ) {
     return this.discussService.create(params);
   }
@@ -53,8 +47,13 @@ export class DiscussController {
     return this.discussService.updateDiscuss(params);
   }
 
+  @Get('rate')
+  public async queryRate(@Query() params: QueryRate) {
+    return this.discussService.queryRate(params);
+  }
+
   @Patch('rate')
-  public async rate() {
-    return this.discussService.rate();
+  public async rate(@Body() params: UpdateRateInput) {
+    return this.discussService.rate(params);
   }
 }

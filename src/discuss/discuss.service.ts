@@ -5,7 +5,12 @@ import { FindAllQueryInput } from './Models/index';
 import DiscussionCRUDer from '../crud/Discussion';
 import CreateDiscussion from './utils/createDiscussion';
 import { QueryParams } from 'src/crud';
-
+import type {
+  CreateDiscussionInput,
+  UpdateDiscussion,
+  QueryRate,
+  UpdateRateInput,
+} from './Models';
 @Injectable()
 export class DiscussService extends SqlService {
   discussCruder: DiscussionCRUDer;
@@ -18,11 +23,7 @@ export class DiscussService extends SqlService {
     topic_content,
     created_user_id,
     topic_for_class_id,
-  }: {
-    topic_content: string;
-    created_user_id: number;
-    topic_for_class_id: number;
-  }) {
+  }: CreateDiscussionInput) {
     if (!topic_content || !created_user_id || !topic_for_class_id) {
       return this.failResponse('参数不全');
     }
@@ -179,11 +180,7 @@ export class DiscussService extends SqlService {
     topicId,
     status,
     operatorId,
-  }: {
-    topicId: number;
-    status: DiscussAction['action'];
-    operatorId: number;
-  }) {
+  }: UpdateDiscussion) {
     // validate
     if (topicId == null || status == null || operatorId == null) {
       throw new HttpException('参数不全', 400);
@@ -217,8 +214,122 @@ export class DiscussService extends SqlService {
   }
 
   // TODO: 实现对话题进行评分API
-  async rate() {
-    return 'This action rate a discuss';
+  async rate({
+    recognition,
+    understanding,
+    evaluation,
+    analysis,
+    create,
+    node_table_id,
+    version,
+  }: UpdateRateInput) {
+    // 参数校验
+    if (
+      typeof +node_table_id !== 'number' ||
+      typeof +version !== 'number' ||
+      typeof +recognition !== 'number' ||
+      typeof +understanding !== 'number' ||
+      typeof +evaluation !== 'number' ||
+      typeof +analysis !== 'number' ||
+      typeof +create !== 'number'
+    ) {
+      throw new HttpException('参数不合法', 400);
+    }
+    await this.transaction(async () => {
+      const sql = `INSERT INTO \`node_table_score\` (version,recognition,understanding,evaluation,analysis,\`create\`,node_table_id,created_time)
+       VALUES (${version},${recognition},${understanding},${evaluation},${analysis},${create},${node_table_id},NOW());`;
+      await this.insert(sql);
+    });
+    return {
+      data: {},
+      message: '评分成功',
+    };
+  }
+
+  /**
+   * 查询所有的观点及其分数情况
+   */
+  async queryRate({ topicId, groupId, ideaType, publisherId }: QueryRate) {
+    // 根据topicId查询
+    if (!topicId || typeof +topicId !== 'number') {
+      throw new HttpException('参数不合法', 400);
+    }
+
+    const ideaTypeList = ['idea', 'group'];
+    if (ideaType && !ideaTypeList.includes(ideaType)) {
+      throw new HttpException('ideaType参数不合法', 400);
+    }
+
+    let sql = `
+    SELECT
+      n.id,
+      n.type,
+      n.student_id,
+      n.created_time,
+      g.id as group_id,
+      g.group_name,
+      s.nickname,
+      ns.recognition,
+      ns.understanding,
+      ns.evaluation,
+      ns.analysis,
+      ns.\`create\`,
+      a.version,
+      a.content 
+    FROM
+      node_table n
+      LEFT JOIN node_table_score ns ON ns.node_table_id = n.id
+      LEFT JOIN student s ON s.id = n.student_id
+      LEFT JOIN \`group\` g ON g.id = s.group_id or g.id = n.group_id
+      JOIN argunode a ON a.arguKey = n.id 
+	    AND a.type = 'claim'
+    WHERE
+      n.topic_id = ${topicId} 
+      AND n.type != 'topic'`;
+
+    if (ideaType) {
+      sql += ideaType ? ` AND n.type = '${ideaType}'` : '';
+    }
+    if (groupId) {
+      sql += groupId ? ` AND g.id = ${groupId}` : '';
+    }
+    if (publisherId) {
+      sql += publisherId ? ` AND s.id = ${publisherId}` : '';
+    }
+    sql += ';';
+
+    const list = await this.query<{
+      id: number;
+      type: string;
+      student_id: number;
+      nickname: string;
+      created_time: Date;
+      group_id: number;
+      group_name: string;
+      version: number;
+      content: string;
+      recognition: number;
+      understanding: number;
+      evaluation: number;
+      analysis: number;
+      create: number;
+    }>(sql);
+    return {
+      data: {
+        // 如果未进行评分，则recognition等为null，这时要设置为0
+        list: list.map((item, index) => {
+          return {
+            renderId: index,
+            ...item,
+            recognition: item.recognition || 0,
+            understanding: item.understanding || 0,
+            evaluation: item.evaluation || 0,
+            analysis: item.analysis || 0,
+            create: item.create || 0,
+          };
+        }),
+      },
+    };
   }
 
   remove(id: number) {

@@ -42,4 +42,14 @@ export class GroupController {
   queryMemeberContribution(@Query() queryInput: { id: number }) {
     return this.groupService.queryEachMemberContribution(queryInput.id);
   }
+
+  @Get('all')
+  queryAllGroup(@Query() queryInput: { class_id: number }) {
+    return this.groupService.queryGroupListByClassId(queryInput.class_id);
+  }
+
+  @Get('all_member')
+  queryStudentsOfGroup(@Query() queryInput: { group_id: number }) {
+    return this.groupService.queryStudentsOfGroup(queryInput.group_id);
+  }
 }

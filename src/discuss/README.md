@@ -23,3 +23,43 @@ analysis
 create
 node_table_id pk 连接外部的评分
 version int 版本号
+
+#### 查询每个观点得分Sql
+SELECT
+	n.id,
+	n.type,
+	n.student_id,
+	g.id AS group_id,
+	g.group_name,
+	ns.recognition,
+	ns.understanding,
+	ns.evaluation,
+	ns.analysis,
+	ns.`create`,
+	a.content,
+	a.version
+FROM
+	node_table n
+	LEFT JOIN node_table_score ns ON ns.node_table_id = n.id
+	LEFT JOIN student s ON s.id = n.student_id
+	LEFT JOIN `group` g ON g.id = s.group_id 
+	OR g.id = n.group_id
+	JOIN argunode a ON a.arguKey = n.id 
+	AND a.type = 'claim' 
+WHERE
+	n.topic_id = 1 
+	AND n.type != 'topic';
+  
+#### class_id查小组
+SELECT
+	g.id,
+	g.group_name,
+	g.group_description,
+	g.group_code,
+	g.group_color 
+FROM
+	`group` g 
+WHERE
+	g.belong_class_id = 1
+
+#### 小组id查成员

@@ -56,6 +56,7 @@ export interface NodeScoreTable {
   create: 0 | 1;
   node_table_id: number; // PK
   version: number;
+  created_time: Date;
 }
 export interface EdgeTable {
   id: number;
