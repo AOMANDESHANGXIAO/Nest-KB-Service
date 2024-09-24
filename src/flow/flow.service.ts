@@ -358,7 +358,6 @@ export class FlowService extends SqlService {
     const individualRadarFormatter = (
       data: Array<{ type: string; count: number }>,
     ): IndividualRadarData => {
-      const max = Math.max(...data.map((item) => item.count));
       const nameTypeMap = {
         data: '前提',
         claim: '结论',
@@ -367,6 +366,12 @@ export class FlowService extends SqlService {
         qualifier: '限定词',
         rebuttal: '反驳',
       };
+      Object.keys(nameTypeMap).forEach((key) => {
+        if (!data.find((item) => item.type === key)) {
+          data.push({ type: key, count: 0 });
+        }
+      });
+      const max = Math.max(...data.map((item) => item.count));
       const indicator = data.map((item) => ({
         name: nameTypeMap[item.type],
         max,
@@ -477,10 +482,11 @@ export class FlowService extends SqlService {
         const rejectCount =
           (sourceTargetMap.reject.get(key) || 0) +
           (sourceTargetMap.reject.get(reverseKey) || 0);
+        const computedWidth =
+          ((approveCount + rejectCount) / maxInteractCount) *
+          MAX_LINE_STYLE_WIDTH;
         item.lineStyle = {
-          width:
-            ((approveCount + rejectCount) / maxInteractCount) *
-            MAX_LINE_STYLE_WIDTH,
+          width: computedWidth || 0,
         };
       });
 
