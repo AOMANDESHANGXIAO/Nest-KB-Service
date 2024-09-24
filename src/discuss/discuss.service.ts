@@ -51,6 +51,7 @@ export class DiscussService extends SqlService {
           ],
         ),
       );
+
       // 1.2 插入一个TopicNode到node表
       const newTopicNodeId = await this.insert(
         this.generateInsertSql(
@@ -64,6 +65,15 @@ export class DiscussService extends SqlService {
             'version',
           ],
           [['topic', topic_content, topic_for_class_id, newTopicId, 'NOW', 1]],
+        ),
+      );
+
+      // 1.3 插入一条数据到DiscussionAction中
+      await this.insert(
+        this.generateInsertSql<DiscussAction>(
+          'discuss_action',
+          ['action', 'discuss_id', 'created_time', 'operator_id'],
+          [['propose', newTopicId, 'NOW', created_user_id]],
         ),
       );
 
@@ -189,6 +199,19 @@ export class DiscussService extends SqlService {
     if (!STATUS_LIST.includes(status)) {
       throw new HttpException('Status参数不合法', 400);
     }
+    // 校验该讨论的当前状态
+    const [res] = await this.query<DiscussTable>(
+      `SELECT status FROM discussion WHERE id = ${topicId}`,
+    );
+    const STATUS_LEVEL = {
+      propose: 0,
+      feedback: 1,
+      summary: 2,
+      close: 3,
+    };
+    if (STATUS_LEVEL[res.status] > STATUS_LEVEL[status]) {
+      throw new HttpException('当前状态不允许操作', 400);
+    }
     await this.transaction(async () => {
       // 1. 首先更新discuss表
       await this.update(
@@ -213,7 +236,6 @@ export class DiscussService extends SqlService {
     };
   }
 
-  // TODO: 实现对话题进行评分API
   async rate({
     recognition,
     understanding,

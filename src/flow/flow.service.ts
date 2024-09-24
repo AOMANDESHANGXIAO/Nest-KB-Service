@@ -7,7 +7,12 @@ import ArguNodeCruder from 'src/crud/ArguNode';
 import ArguEdgeCruder from 'src/crud/ArguEdge';
 import { IdeaType, TopicType, GroupType } from 'src/crud/NodeTable.type';
 import { NodeTable, NodeTypeEnum } from 'src/crud/Table.model';
-import { EdgeTable, ArguNodeTable, ArguEdgeTable } from 'src/crud/Table.model';
+import {
+  EdgeTable,
+  ArguNodeTable,
+  ArguEdgeTable,
+  DiscussAction,
+} from 'src/crud/Table.model';
 import {
   CreateNewIdeaArgs,
   CreateNewGroupIdeaArgs,
@@ -350,6 +355,20 @@ export class FlowService extends SqlService {
     return await this.createGroupConclusion(args);
   }
 
+  public async queryTopicProcess(topic_id: number) {
+    const sql = `
+    SELECT
+      da.id,
+      da.action,
+      da.discuss_id,
+      da.created_time 
+    FROM
+      \`discuss_action\` da 
+    WHERE
+      da.discuss_id = ${topic_id}
+    `;
+    return await this.query<Omit<DiscussAction, 'operator_id'>>(sql);
+  }
   /**
    *
    * @returns 格式化工具函数
@@ -622,16 +641,19 @@ export class FlowService extends SqlService {
     student_id: number,
     group_id: number,
   ) {
+    // TODO: 新增查询话题的推进进度 ✅
     const [
       individualArgument,
       peerInteraction,
       nicknameOfGroup,
       replyAndModify,
+      topicProcess,
     ] = await Promise.all([
       this.queryIndividualArgument(topic_id, student_id),
       this.queryPeerInteraction(topic_id, group_id),
       this.queryGroupNicknames(group_id),
       this.queryReplyAndModifyData(topic_id, group_id),
+      this.queryTopicProcess(topic_id),
     ]);
 
     const {
@@ -645,6 +667,7 @@ export class FlowService extends SqlService {
         radarOption: individualRadarFormatter(individualArgument),
         graphOption: peerInteractionFormatter(peerInteraction, nicknameOfGroup),
         barOption: replyAndModifyFormatter(replyAndModify, nicknameOfGroup),
+        timeLineList: topicProcess,
       },
     };
   }
@@ -751,7 +774,7 @@ export class FlowService extends SqlService {
       JOIN student ON student.id = node_table.student_id
       JOIN \`group\` ON \`group\`.id = student.group_id 
     WHERE
-      \`group\`.id = ${group_id} 
+      \`group\`.id = ${group_id} and node_table.topic_id = ${topic_id} 
     GROUP BY
       student.id;`;
 
