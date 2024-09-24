@@ -282,7 +282,10 @@ export default class GroupCRUDer implements GroupCRUD {
     const eachOneProposeFeedbackSummary = eachOneProposeFeedback.map((item) => {
       const summary = eachOneSummary.find((i) => i.id === item.id);
       return {
-        ...item,
+        proposeNum: Number(item.proposeNum) || 0,
+        feedbackNum: Number(item.feedbackNum) || 0,
+        id: item.id,
+        name: item.name,
         summaryNum: summary?.summaryNum || 0,
       };
     });

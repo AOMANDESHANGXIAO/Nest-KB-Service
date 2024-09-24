@@ -5,10 +5,6 @@ import { Controller, Get, Post, Query, Body, Patch } from '@nestjs/common';
 import { FlowService } from './flow.service';
 import { CreateNewIdeaArgs, CreateNewGroupIdeaArgs } from './Models/index';
 
-/**
- * TODO: 实现发布小组观点功能API
- * 这个类用于控制 流程图 包括小组的论证图等路由
- */
 @Controller('flow')
 export class FlowController {
   constructor(private readonly flowService: FlowService) {}
