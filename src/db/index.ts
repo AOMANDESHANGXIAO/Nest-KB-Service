@@ -1,6 +1,6 @@
 import config from '../config';
 import * as mysql from 'mysql2/promise';
-import { Tables } from 'src/crud/Table.model';
+import { Tables, StudentActionLog } from 'src/crud/Table.model';
 
 class SqlService {
   conncetion: mysql.Connection | null;
@@ -247,6 +247,24 @@ class SqlService {
     } catch (err) {
       throw err;
     }
+  }
+  // log方法
+  async log({
+    action,
+    student_id,
+    node_id,
+  }: {
+    action: StudentActionLog['action'];
+    student_id: StudentActionLog['student_id'];
+    node_id: StudentActionLog['node_id'];
+  }) {
+    await this.insert(
+      this.generateInsertSql<StudentActionLog>(
+        'student_action_log',
+        ['action', 'student_id', 'node_id', 'created_time'],
+        [[action, student_id, node_id, 'NOW']],
+      ),
+    );
   }
 }
 

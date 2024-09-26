@@ -100,6 +100,21 @@ export interface Class_ {
   class_name: string;
   status: 1;
 }
+export interface StudentActionLog {
+  id: number;
+  action:
+    | 'propose'
+    | 'check_group'
+    | 'check_idea'
+    | 'modify_idea'
+    | 'modify_group'
+    | 'approve'
+    | 'oppose'
+    | 'summary_group';
+  student_id: number;
+  node_id: number;
+  created_time: Date;
+}
 export type Tables =
   | 'student'
   | 'group'
@@ -111,4 +126,5 @@ export type Tables =
   | 'admin'
   | 'class'
   | 'discuss_action'
-  | 'node_table_score';
+  | 'node_table_score'
+  | 'student_action_log';

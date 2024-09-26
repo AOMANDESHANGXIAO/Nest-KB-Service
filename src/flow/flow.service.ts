@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { SqlService } from 'src/db';
 // import GroupCRUDer from 'src/crud/Group';
 import NodeCRUDer from 'src/crud/NodeTable';
@@ -18,7 +18,7 @@ import {
   CreateNewGroupIdeaArgs,
 } from '../flow/Models/index';
 import { IndividualRadarData } from './Models';
-
+import * as _ from 'lodash';
 /**
  * TODO: 实现发布小组观点功能API✅
  */
@@ -115,7 +115,11 @@ export class FlowService extends SqlService {
     };
   }
 
-  public async queryNodeContentById(node_id: number) {
+  public async queryNodeContentById(
+    node_id: number,
+    student_id: number,
+    type: 'idea' | 'group',
+  ) {
     const lastestVersion = await this.arguNodeCruder.FindLatestVersion(node_id);
     if (!lastestVersion) {
       return this.failResponse('没有找到该论证节点');
@@ -147,6 +151,12 @@ export class FlowService extends SqlService {
         ),
       ),
     ]);
+
+    await this.log({
+      action: `check_${type}`,
+      student_id: student_id,
+      node_id: node_id,
+    });
 
     return {
       data: {
@@ -182,14 +192,27 @@ export class FlowService extends SqlService {
 
     if (type === 'idea') {
       const callback = async () => {
+        // 记录用户操作
+        await this.log({
+          action: 'propose',
+          student_id: student_id,
+          node_id: +arguKey,
+        });
         // 如果是提出观点,那么会自动连接到小组
         return this.conncetIdeaToGroup(+arguKey, student_id, topic_id);
       };
       createdEffect.push(callback);
     } else if (type === 'reply') {
-      const { replyNodeId, replyType } = args;
+      const { replyNodeId, replyType, student_id } = args;
+
       // 如果是回复观点那么要将创建的观点连接到被回复的观点
       const callback = async () => {
+        // log 回复观点
+        await this.log({
+          action: replyType === 'approve' ? 'approve' : 'oppose',
+          student_id: student_id,
+          node_id: +replyNodeId,
+        });
         return this.insert(
           this.generateInsertSql(
             'edge_table',
@@ -200,9 +223,17 @@ export class FlowService extends SqlService {
       };
       createdEffect.push(callback);
     } else if (type === 'modify') {
-      const { modifyNodeId } = args;
+      const { modifyNodeId, student_id } = args;
       version =
         (await this.arguNodeCruder.FindLatestVersion(+modifyNodeId)) + 1;
+      const callback = async () => {
+        await this.log({
+          action: 'modify_idea',
+          student_id: student_id,
+          node_id: +modifyNodeId,
+        });
+      };
+      createdEffect.push(callback);
     }
 
     await this.transaction(async () => {
@@ -259,8 +290,6 @@ export class FlowService extends SqlService {
         ),
       ]);
       // 调用创建以后的影响
-      // console.log('createdEffect', createdEffect);
-      // 依次调用
       await Promise.all(
         createdEffect.map((item) => item().catch((err) => console.log(err))),
       );
@@ -294,18 +323,41 @@ export class FlowService extends SqlService {
   /**
    *  依据Node的id查询小组节点的论证
    */
-  public async queryGroupNodeContentByNodeId(node_id: string) {
+  public async queryGroupNodeContentByNodeId(
+    node_id: string,
+    student_id: number,
+  ) {
     // TODO: 规范，还要查询引用状态等，因此单独啦一个方法出来
-    return await this.queryNodeContentById(+node_id);
+    return await this.queryNodeContentById(+node_id, student_id, 'group');
   }
 
-  public async createGroupConclusion(args: CreateNewGroupIdeaArgs) {
+  public async createGroupConclusion(
+    args: CreateNewGroupIdeaArgs,
+    type: 'summary' | 'modify' = 'summary',
+  ) {
     const { nodes, edges, groupNodeId, student_id } = args;
+    // 检验
+    if (
+      nodes.length === 0 ||
+      edges.length === 0 ||
+      !groupNodeId ||
+      !student_id
+    ) {
+      throw new HttpException('参数错误', 500);
+    }
     const arguKey = args.groupNodeId;
     const createdEffects: Array<() => Promise<any>> = [];
 
     const version =
       (await this.arguNodeCruder.FindLatestVersion(+groupNodeId)) + 1;
+    const callback = async () => {
+      await this.log({
+        action: type === 'summary' ? 'summary_group' : 'modify_group',
+        student_id: student_id,
+        node_id: +groupNodeId,
+      });
+    };
+    createdEffects.push(callback);
 
     await this.transaction(async () => {
       // 创建argumentNode和argumentEdge
@@ -352,7 +404,7 @@ export class FlowService extends SqlService {
   }
 
   public async modifyGroupConslusion(args: CreateNewGroupIdeaArgs) {
-    return await this.createGroupConclusion(args);
+    return await this.createGroupConclusion(args, 'modify');
   }
 
   public async queryTopicProcess(topic_id: number) {
@@ -668,6 +720,54 @@ export class FlowService extends SqlService {
         graphOption: peerInteractionFormatter(peerInteraction, nicknameOfGroup),
         barOption: replyAndModifyFormatter(replyAndModify, nicknameOfGroup),
         timeLineList: topicProcess,
+      },
+    };
+  }
+
+  /**
+   *
+   * @param topic_id 主题id
+   * @description 制作词云
+   */
+  public async queryWordCloud(topic_id: number) {
+    // plan 1 在后端将词云内容直接查出来，拼接起来
+    // 前端利用浏览器的API做词云
+    if (!topic_id) {
+      throw new HttpException('topic_id is required', 400);
+    }
+    const sql = `
+    SELECT
+      a.content,
+      g.id group_id,
+      g.group_name 
+    FROM
+      argunode a
+      LEFT JOIN node_table n ON n.id = a.arguKey
+      LEFT JOIN student s ON s.id = n.student_id
+      LEFT JOIN \`group\` g ON g.id = s.group_id 
+      OR n.group_id = g.id 
+    WHERE
+      n.topic_id = ${topic_id}
+    `;
+    const result = await this.query<{
+      content: string;
+      group_id: number;
+      group_name: string;
+    }>(sql);
+    const groupedResult = _.groupBy(result, (res) => res.group_name);
+    const list = Object.keys(groupedResult).map((key) => {
+      const group = groupedResult[key];
+      // 拼接content
+      const text = group.map((item) => item.content).join(' ');
+      return {
+        group_name: key,
+        text,
+      };
+    });
+
+    return {
+      data: {
+        list,
       },
     };
   }

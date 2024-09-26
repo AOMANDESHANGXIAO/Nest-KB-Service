@@ -14,13 +14,26 @@ export class FlowController {
   }
 
   @Get('query_content')
-  public async queryContent(@Query('node_id') node_id: number) {
-    return await this.flowService.queryNodeContentById(+node_id);
+  public async queryContent(
+    @Query('node_id') node_id: number,
+    @Query('student_id') student_id: number,
+  ) {
+    return await this.flowService.queryNodeContentById(
+      +node_id,
+      +student_id,
+      'idea',
+    );
   }
 
   @Get('query_group_content')
-  public async queryGroupContent(@Query('node_id') node_id: string) {
-    return await this.flowService.queryGroupNodeContentByNodeId(node_id);
+  public async queryGroupContent(
+    @Query('node_id') node_id: string,
+    @Query('student_id') student_id: number,
+  ) {
+    return await this.flowService.queryGroupNodeContentByNodeId(
+      node_id,
+      student_id,
+    );
   }
 
   @Post('propose_idea')
@@ -62,5 +75,10 @@ export class FlowController {
       student_id,
       group_id,
     );
+  }
+
+  @Get('wordCloud')
+  public async queryWordCloud(@Query('topic_id') topic_id: number) {
+    return await this.flowService.queryWordCloud(topic_id);
   }
 }
