@@ -152,11 +152,14 @@ export class FlowService extends SqlService {
       ),
     ]);
 
-    await this.log({
-      action: `check_${type}`,
-      student_id: student_id,
-      node_id: node_id,
-    });
+    // 由管理员进行的查询，则不进行记录
+    if (student_id) {
+      await this.log({
+        action: `check_${type}`,
+        student_id: student_id,
+        node_id: node_id,
+      });
+    }
 
     return {
       data: {

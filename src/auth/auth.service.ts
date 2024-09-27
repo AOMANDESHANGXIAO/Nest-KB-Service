@@ -3,7 +3,8 @@ import { SqlService } from 'src/db';
 import { Login, Register } from './auth.controller';
 import PasswordHandler from 'src/utils/password.handler';
 import JwtHandler from 'src/utils/jwt.handler';
-
+import { QueryParams } from 'src/crud/index';
+import { escape, format } from 'mysql2';
 class AuthTool {
   static async findOneExist(username: string, service: SqlService) {
     const sql = `SELECT * FROM admin WHERE username = '${username}'`;
@@ -87,8 +88,8 @@ export class AuthService extends SqlService {
       this.insert(
         this.generateInsertSql(
           'admin',
-          ['username', 'password', 'nickname'],
-          [[username, hashedPassword, nickname]],
+          ['username', 'password', 'nickname', 'created_time'],
+          [[username, hashedPassword, nickname, 'NOW']],
         ),
       );
     });
@@ -97,6 +98,40 @@ export class AuthService extends SqlService {
     return {
       message: '注册成功',
       data: {},
+    };
+  }
+
+  /**
+   * 查找所有管理员列表
+   */
+  public async findAll(params: QueryParams) {
+    const { page, pageSize } = params;
+    const offset = Number((page - 1) * pageSize); // 计算偏移量
+
+    const sql = `
+      SELECT a.id, a.username, a.nickname, a.created_time 
+      FROM admin a
+      LIMIT ${Number(pageSize)} OFFSET ${Number(escape(offset))}
+    `;
+
+    // 执行查询
+    const rows = await this.query<{
+      // 假设 `this.query` 是异步方法并返回一个数组
+      id: number;
+      username: string;
+      nickname: string;
+      created_time: string;
+    }>(format(sql)); // 使用 `format` 方法安全地执行 SQL
+
+    const [totalNum] = await this.query<{ cnt: number }>(
+      `SELECT COUNT(*) cnt FROM admin`,
+    );
+
+    return {
+      data: {
+        list: rows,
+        totalNum: totalNum.cnt,
+      },
     };
   }
 }
