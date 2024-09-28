@@ -116,7 +116,6 @@ export class AuthService extends SqlService {
 
     // 执行查询
     const rows = await this.query<{
-      // 假设 `this.query` 是异步方法并返回一个数组
       id: number;
       username: string;
       nickname: string;
