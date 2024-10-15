@@ -115,6 +115,18 @@ export interface StudentActionLog {
   node_id: number;
   created_time: Date;
 }
+export interface Student_File_Storage {
+  id: number;
+  filename: string;
+  file_path: string;
+  uploader_id: number;
+  upload_time: Date;
+  is_public: number; // 这个字段用来标记小组文件是否公有.1表示小组内部私有，0表示所有人都可见
+  is_removed: number; // 这个字段用来标记文件是否被删除，1表示被删除，0表示未被删除
+  removed_time: Date; // 这个字段表示文件被删除的时间
+  download_count: number; // 这个字段记录被下载的次数
+  topic_id: number; // 这个字段用来记录文件属于哪个话题
+}
 export type Tables =
   | 'student'
   | 'group'
@@ -127,4 +139,5 @@ export type Tables =
   | 'class'
   | 'discuss_action'
   | 'node_table_score'
-  | 'student_action_log';
+  | 'student_action_log'
+  | 'student_file_storage';

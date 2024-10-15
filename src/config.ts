@@ -20,5 +20,12 @@ const config = {
       '/admin/sign/signup',
     ],
   },
+  fileOption: {
+    staticFolder: 'assets',
+    prefix: 'static',
+  },
+  isDev: true, // 标记是否是开发环境
+  // isDev: false,
+  serviceIp: '122.51.107.161', // 腾讯云服务器的地址，如果更换服务器手动更新地址
 };
 export default config;

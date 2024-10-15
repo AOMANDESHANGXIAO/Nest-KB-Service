@@ -37,9 +37,16 @@ export class AuthService extends SqlService {
   }
 
   /**
-   * 管理员登录
+   * 处理用户登录请求
+   *
+   * @param {Login} loginParams - 包含用户名和密码的登录参数
+   * @throws {HttpException} 如果用户不存在或密码错误，抛出相应的 HTTP 异常
+   * @returns {Promise<{ data: { token: string, nickname: string, username: string, id: number }, message: string }>} 包含 token 和用户信息的响应对象
    */
-  public async login(loginParams: Login) {
+  public async login(loginParams: Login): Promise<{
+    data: { token: string; nickname: string; username: string; id: number };
+    message: string;
+  }> {
     // 1. 检查用户名是否存在
     const { username, password } = loginParams;
     const admin = await AuthTool.findOneByUsername(username, this);

@@ -7,6 +7,7 @@ import { DiscussModule } from './discuss/discuss.module';
 import { ClassroomModule } from './classroom/classroom.module';
 import { FlowModule } from './flow/flow.module';
 import { AuthModule } from './auth/auth.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AuthModule } from './auth/auth.module';
     ClassroomModule,
     FlowModule,
     AuthModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
