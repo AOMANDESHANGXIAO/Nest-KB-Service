@@ -117,8 +117,8 @@ export interface StudentActionLog {
 }
 export interface Student_File_Storage {
   id: number;
-  filename: string;
-  file_path: string;
+  filename: string; // 文件的原名
+  file_path: string; // 存放地址
   uploader_id: number;
   upload_time: Date;
   is_public: number; // 这个字段用来标记小组文件是否公有.1表示小组内部私有，0表示所有人都可见

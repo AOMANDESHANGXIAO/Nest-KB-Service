@@ -1,5 +1,9 @@
-export interface UploaderInput {
-  student_id: string;
-  is_public: '0' | '1'; // 表示是否共有,1 表示共有，0表示私有
-  topic_id: string;
+export interface UploadInput {
+  student_id: number;
+  is_public: number;
+  topic: number;
+}
+export interface UploadFileInfo {
+  fileName: string;
+  filePath: string;
 }

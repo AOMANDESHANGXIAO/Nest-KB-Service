@@ -1,46 +1,27 @@
 import {
   Controller,
   Post,
+  Body,
   UseInterceptors,
   UploadedFile,
-  Body,
 } from '@nestjs/common';
 import { UploadService } from './upload.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-// multer中间件
-import * as multer from 'multer';
-import * as fs from 'fs';
-import { join } from 'path';
-import { UploaderInput } from './interface';
-import config from 'src/config';
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const folderPath = join(__dirname, `../${config.fileOption.staticFolder}`);
-    if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath);
-    }
-    cb(null, folderPath);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  },
-});
+import { UploadInput } from './interface';
 
 @Controller('upload')
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
-  // 上传文件
   @Post('addFile')
-  @UseInterceptors(FileInterceptor('file', { storage }))
-  create(
+  @UseInterceptors(FileInterceptor('file'))
+  upload(
     @UploadedFile() file: Express.Multer.File,
-    @Body() uploaderInput: UploaderInput,
+    @Body() uploadInput: UploadInput,
   ) {
-    return this.uploadService.create({
-      filename: file.filename,
-      ...uploaderInput,
+    return this.uploadService.upload(uploadInput, {
+      fileName: file.originalname, // 原始文件名, 用于展示给用户看
+      filePath: file.filename, // 当前文件名
     });
   }
 }

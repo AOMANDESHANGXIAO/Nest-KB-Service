@@ -5,20 +5,29 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 
+const storage = MulterModule.register({
+  storage: diskStorage({
+    /**
+     * 存放位置
+     */
+    destination: join(__dirname, '../uploads'),
+    /**
+     *
+     * @param _ req
+     * @param file
+     * @param callback
+     * @returns
+     */
+    filename: (req, file, callback) => {
+      console.log('req', req.body);
+      const fileName = `${new Date().getTime() + extname(file.originalname)}`;
+      return callback(null, fileName);
+    },
+  }),
+});
+
 @Module({
-  imports: [
-    MulterModule.register({
-      storage: diskStorage({
-        // dist/images，相对于upload来说是../
-        destination: join(__dirname, '../images'),
-        filename: (_, file, callback) => {
-          console.log(file.originalname);
-          const fileName = `${new Date().getTime() + extname(file.originalname)}`;
-          return callback(null, fileName);
-        },
-      }),
-    }),
-  ],
+  imports: [storage],
   controllers: [UploadController],
   providers: [UploadService],
 })

@@ -18,8 +18,8 @@ async function bootstrap() {
   app.use(new TokenMiddleware().use);
   app.enableCors();
   // 配置前缀, 此项为可选
-  app.useStaticAssets(join(__dirname, `./${config.fileOption.staticFolder}`), {
-    prefix: config.fileOption.prefix,
+  app.useStaticAssets(join(__dirname, `uploads`), {
+    prefix: '/static',
   });
   await app.listen(config.port);
 }

@@ -1,43 +1,33 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
+import { UploadInput, UploadFileInfo } from './interface';
 import { SqlService } from 'src/db';
-import { UploaderInput } from './interface';
-import { Student_File_Storage, StudentTable } from 'src/crud/Table.model';
-import { getFilePath } from 'src/utils/filePathHandler';
-interface CreateFileInput extends UploaderInput {
-  filename: string;
-}
+import { Student_File_Storage } from 'src/crud/Table.model';
+function validateUploadInput(input: UploadInput): boolean {
+  // 检查 student_id 是否为数字
+  if (typeof input.student_id !== 'number') {
+    return false;
+  }
 
+  // 检查 is_public 是否为 0 或 1
+  if (input.is_public !== 0 && input.is_public !== 1) {
+    return false;
+  }
+
+  // 检查 topic 是否为数字
+  if (typeof input.topic !== 'number') {
+    return false;
+  }
+
+  // 如果所有检查都通过，则返回 true
+  return true;
+}
 @Injectable()
 export class UploadService extends SqlService {
-  async create(createFileInput: CreateFileInput) {
-    const { student_id, filename, is_public, topic_id } = createFileInput;
-    // FIXME: 请求参数读取格式问题
-    console.log('>>>Uploader', createFileInput);
-    console.log('typeof is_public', typeof is_public);
-    if (student_id === undefined) {
-      throw new HttpException('未提供student_id', 400);
-    } else {
-      // 查询student_id是否存在
-      const res = await this.query<StudentTable>(
-        `SELECT * FROM student WHERE id = ${student_id}`,
-      );
-      if (!res || res.length === 0) {
-        throw new HttpException('student_id不存在', 400);
-      }
+  async upload(uploadInput: UploadInput, uploadFileInfo: UploadFileInfo) {
+    if (!validateUploadInput(uploadInput)) {
+      throw new HttpException('参数错误', 400);
     }
-
-    if (
-      filename === undefined ||
-      filename === '' ||
-      topic_id === undefined ||
-      is_public === undefined ||
-      (is_public !== '0' && is_public !== '1')
-    ) {
-      throw new HttpException('入参不合法', 400);
-    }
-
-    const filePath = getFilePath(filename);
-    // 数据库表插入记录
+    // 存到数据库表中
     await this.transaction(async () => {
       await this.insert(
         this.generateInsertSql<Student_File_Storage>(
@@ -54,15 +44,16 @@ export class UploadService extends SqlService {
           ],
           [
             [
-              filename,
-              filePath,
-              student_id,
+              uploadFileInfo.fileName,
+              uploadFileInfo.filePath,
+              uploadInput.student_id,
               'NOW',
-              Number(is_public),
+              uploadInput.is_public,
               0,
               0,
-              topic_id,
+              uploadInput.topic,
             ],
+            ,
           ],
         ),
       );
@@ -70,7 +61,7 @@ export class UploadService extends SqlService {
 
     return {
       data: {},
-      message: '上传成功',
+      message: 'Upload Success',
     };
   }
 }

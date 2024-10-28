@@ -162,7 +162,7 @@ class SqlService {
 
   generateInsertSql<T>(
     tableName: Tables,
-    columns: string[] | Array<keyof T>,
+    columns: Array<keyof T>,
     values: Array<(string | number | 'NOW')[]>,
   ) {
     // 验证输入是否有效

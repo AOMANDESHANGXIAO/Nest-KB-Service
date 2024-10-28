@@ -19,6 +19,12 @@ export class TokenMiddleware implements NestMiddleware {
     const jwtHandler = new JwtHandler();
     // console.log('method', method, 'route', route, 'token', token);
     try {
+      // console.log('route is', route);
+      if (route.startsWith('/static')) {
+        // 静态资源，可以直接访问，不需要验证token
+        next();
+        return;
+      }
       await jwtHandler.validate(route, token);
       next();
     } catch (err) {
