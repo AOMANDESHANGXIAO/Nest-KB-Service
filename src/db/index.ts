@@ -180,6 +180,10 @@ class SqlService {
         return `(${value.map((v) => this.handleValue(v)).join(',')})`;
       })
       .join(',');
+    // 如果只有一行数据，那么除去最后一个 ',' 号
+    if (values.length === 1) {
+      valuesSql.slice(0, valuesSql.length - 1);
+    }
 
     const sql = `INSERT INTO \`${tableName}\` (${columns.join(',')}) VALUES ${valuesSql};`;
 

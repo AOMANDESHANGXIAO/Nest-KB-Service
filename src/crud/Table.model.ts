@@ -23,6 +23,7 @@ export interface DiscussTable {
   created_time: Date;
   close_time: Date;
   topic_for_class_id: number;
+  created_user_id: number;
   status: 'propose' | 'feedback' | 'summary' | 'close';
 }
 export interface DiscussAction {

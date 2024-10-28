@@ -4,10 +4,13 @@ import {
   Body,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
 } from '@nestjs/common';
 import { UploadService } from './upload.service';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { UploadInput } from './interface';
+
+const MAX_UPLOAD_FILES = 5;
 
 @Controller('upload')
 export class UploadController {
@@ -19,9 +22,48 @@ export class UploadController {
     @UploadedFile() file: Express.Multer.File,
     @Body() uploadInput: UploadInput,
   ) {
+    Object.keys(uploadInput).forEach((key) => {
+      uploadInput[key] = Number(uploadInput[key]);
+    });
+
     return this.uploadService.upload(uploadInput, {
       fileName: file.originalname, // 原始文件名, 用于展示给用户看
       filePath: file.filename, // 当前文件名
     });
+  }
+
+  /**
+   *
+   * @param files
+   * @param uploadInput
+   * @description 多文件上传
+   * @returns
+   */
+  @Post('addFiles')
+  @UseInterceptors(FilesInterceptor('files', MAX_UPLOAD_FILES))
+  uploadMulple(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body() uploadInput: UploadInput,
+  ) {
+    // // 处理多个文件
+    // files.forEach((file, index) => {
+    //   console.log(`文件 ${index + 1} 的原始文件名: ${file.originalname}`);
+    //   console.log(`文件 ${index + 1} 的当前文件名: ${file.filename}`);
+    // });
+
+    // 转换 uploadInput 中的值为数字
+    Object.keys(uploadInput).forEach((key) => {
+      uploadInput[key] = Number(uploadInput[key]);
+    });
+
+    return this.uploadService.uploadMuple(
+      uploadInput,
+      files.map((file) => {
+        return {
+          fileName: file.originalname, // 原始文件名, 用于展示给用户看
+          filePath: file.filename, // 当前文件名
+        };
+      }),
+    );
   }
 }
