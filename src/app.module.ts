@@ -8,6 +8,7 @@ import { ClassroomModule } from './classroom/classroom.module';
 import { FlowModule } from './flow/flow.module';
 import { AuthModule } from './auth/auth.module';
 import { UploadModule } from './upload/upload.module';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UploadModule } from './upload/upload.module';
     FlowModule,
     AuthModule,
     UploadModule,
+    FilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

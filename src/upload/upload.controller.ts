@@ -45,12 +45,6 @@ export class UploadController {
     @UploadedFiles() files: Express.Multer.File[],
     @Body() uploadInput: UploadInput,
   ) {
-    // // 处理多个文件
-    // files.forEach((file, index) => {
-    //   console.log(`文件 ${index + 1} 的原始文件名: ${file.originalname}`);
-    //   console.log(`文件 ${index + 1} 的当前文件名: ${file.filename}`);
-    // });
-
     // 转换 uploadInput 中的值为数字
     Object.keys(uploadInput).forEach((key) => {
       uploadInput[key] = Number(uploadInput[key]);

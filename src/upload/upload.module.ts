@@ -19,7 +19,6 @@ const storage = MulterModule.register({
      * @returns
      */
     filename: (req, file, callback) => {
-      console.log('req', req.body);
       const fileName = `${new Date().getTime() + extname(file.originalname)}`;
       return callback(null, fileName);
     },
