@@ -12,6 +12,11 @@ export class FilesController {
     return this.filesService.findGroupFile(params);
   }
 
+  @Get('community')
+  findCommunityFile(@Query() params: FileQueryParams) {
+    return this.filesService.findCommunityFile(params);
+  }
+
   @Get('export/:filename')
   async downLoad(@Param('filename') filename: string, @Res() res: Response) {
     if (!filename) {
