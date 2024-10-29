@@ -19,12 +19,18 @@ export class ResponseInterceptor<T extends Response>
 {
   intercept(context: ExecutionContext, next: CallHandler<T>): Observable<any> {
     return next.handle().pipe(
-      map((response) => ({
-        code: 200,
-        success: 'success' in response ? response.success : true,
-        message: response?.message || '请求成功',
-        data: response.data,
-      })),
+      map((response) => {
+        let isSuccess = true;
+        if (response !== undefined) {
+          isSuccess = 'success' in response ? response.success : true;
+        }
+        return {
+          code: 200,
+          success: isSuccess,
+          message: response?.message || '请求成功',
+          data: response?.data || {},
+        };
+      }),
     );
   }
 }
