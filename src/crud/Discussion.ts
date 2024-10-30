@@ -28,7 +28,7 @@ export default class DiscussionCRUDer implements CRUDer {
 
     like && (sql += ` AND t1.topic_content LIKE '%${like}%'`);
 
-    sql += ` ORDER BY t1.created_time ${sort ? 'DESC' : 'ASC'};`;
+    sql += ` ORDER BY t1.created_time ${Number(sort) ? 'DESC' : 'ASC'};`;
 
     return await this.s.query<{
       id: number;
