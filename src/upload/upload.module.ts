@@ -4,6 +4,7 @@ import { UploadController } from './upload.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 const storage = MulterModule.register({
   storage: diskStorage({
@@ -19,7 +20,8 @@ const storage = MulterModule.register({
      * @returns
      */
     filename: (req, file, callback) => {
-      const fileName = `${new Date().getTime() + extname(file.originalname)}`;
+      const uuid = uuidv4();
+      const fileName = `${uuid + extname(file.originalname)}`;
       return callback(null, fileName);
     },
   }),
