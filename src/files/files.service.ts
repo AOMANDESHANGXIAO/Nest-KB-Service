@@ -4,6 +4,9 @@ import { FileQueryParams } from './interface';
 @Injectable()
 export class FilesService extends SqlService {
   async findGroupFile(params: FileQueryParams) {
+    const keywordCondition = params.keyword
+      ? `AND (s.filename LIKE '%${params.keyword}%' OR student.nickname LIKE '%${params.keyword}%')`
+      : '';
     const sql = `
     SELECT
       s.filename,
@@ -17,6 +20,7 @@ export class FilesService extends SqlService {
     WHERE
       s.topic_id = ${params.topic_id} 
       AND s.is_removed != 1
+      ${keywordCondition}
       ORDER BY s.upload_time ${params.sort ? params.sort : 'ASC'}
     LIMIT ${params.pageSize} OFFSET ${(params.page - 1) * params.pageSize};`;
     const res = await this.query<{
@@ -45,6 +49,9 @@ export class FilesService extends SqlService {
   }
 
   async findCommunityFile(params: FileQueryParams) {
+    const keywordCondition = params.keyword
+      ? `AND (s.filename LIKE '%${params.keyword}%' OR student.nickname LIKE '%${params.keyword}%')`
+      : '';
     const sql = `
     SELECT
       s.filename,
@@ -58,7 +65,8 @@ export class FilesService extends SqlService {
       s.topic_id = ${params.topic_id} 
       AND s.is_public = 1 
       AND s.is_removed != 1
-      ORDER BY s.upload_time ${params.sort ? params.sort : 'ASC'}
+      ${keywordCondition}
+      ORDER BY s.upload_time ${params.sort ? params.sort : 'DESC'}
     LIMIT ${params.pageSize} OFFSET ${(params.page - 1) * params.pageSize};`;
 
     const res = await this.query<{
@@ -75,7 +83,7 @@ export class FilesService extends SqlService {
       WHERE
         s.topic_id = ${params.topic_id} 
         AND s.is_public = 1 
-        AND s.is_removed != 1`,
+        AND s.is_removed != 1;`,
     );
     return {
       data: {
