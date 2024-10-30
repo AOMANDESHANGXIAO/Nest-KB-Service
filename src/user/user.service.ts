@@ -114,6 +114,8 @@ export class UserService extends SqlService {
       'summaryNum',
       'reviseNum',
     ]);
+    // console.log('stuDiscussMap', stuDiscussMap);
+    // console.log('summaryMap', summaryMap);
 
     LegendData = this.generateLegendData(userList);
     SeriesData = this.generateSeriesData(
@@ -265,7 +267,7 @@ export class UserService extends SqlService {
     ].map((key) => {
       return Math.max(
         ...Array.from(stuDiscussMap.values())
-          .concat(summaryMap.values())
+          .concat(Array.from(summaryMap.values()))
           .map((data) => data[key] || 0),
       );
     });
