@@ -1,7 +1,14 @@
 import { Injectable, HttpException } from '@nestjs/common';
-import { UploadInput, UploadFileInfo } from './interface';
+import {
+  UploadInput,
+  UploadFileInfo,
+  UploadCourseWorkInput,
+} from './interface';
 import { SqlService } from 'src/db';
-import { Student_File_Storage } from 'src/crud/Table.model';
+import {
+  Student_File_Storage,
+  Course_Work_Upload_Storage,
+} from 'src/crud/Table.model';
 function validateUploadInput(input: UploadInput): boolean {
   // 检查 student_id 是否为数字
   if (typeof input.student_id !== 'number') {
@@ -114,6 +121,29 @@ export class UploadService extends SqlService {
     return {
       data: {},
       message: 'Upload Files Success',
+    };
+  }
+
+  async uploadCourseWorkFile(
+    uploadInput: UploadCourseWorkInput,
+    uploadFileInfo: UploadFileInfo,
+  ) {
+    const { student_id, topic_id } = uploadInput;
+    const { fileName, filePath } = uploadFileInfo;
+
+    await this.transaction(async () => {
+      await this.insert(
+        this.generateInsertSql<Course_Work_Upload_Storage>(
+          'course_work_upload_storage',
+          ['student_id', 'topic_id', 'file_name', 'file_path', 'upload_time'],
+          [[student_id, topic_id, fileName, filePath, 'NOW']],
+        ),
+      );
+    });
+
+    return {
+      data: {},
+      message: 'success',
     };
   }
 }

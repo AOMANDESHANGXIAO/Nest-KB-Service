@@ -7,3 +7,7 @@ export interface UploadFileInfo {
   fileName: string;
   filePath: string;
 }
+export interface UploadCourseWorkInput {
+  student_id: number;
+  topic_id: number;
+}

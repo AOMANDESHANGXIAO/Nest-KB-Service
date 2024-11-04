@@ -25,6 +25,7 @@ export interface DiscussTable {
   topic_for_class_id: number;
   created_user_id: number;
   status: 'propose' | 'feedback' | 'summary' | 'close';
+  courseWork: string; // 话题作业的内容
 }
 export interface DiscussAction {
   id: number;
@@ -128,6 +129,14 @@ export interface Student_File_Storage {
   download_count: number; // 这个字段记录被下载的次数
   topic_id: number; // 这个字段用来记录文件属于哪个话题
 }
+export interface Course_Work_Upload_Storage {
+  id: number;
+  student_id: number;
+  topic_id: number;
+  file_name: string; // 文件的原名
+  file_path: string; // 存放地址
+  upload_time: Date;
+}
 export type Tables =
   | 'student'
   | 'group'
@@ -141,4 +150,5 @@ export type Tables =
   | 'discuss_action'
   | 'node_table_score'
   | 'student_action_log'
-  | 'student_file_storage';
+  | 'student_file_storage'
+  | 'course_work_upload_storage';

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { UploadService } from './upload.service';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import { UploadInput } from './interface';
+import { UploadInput, UploadCourseWorkInput } from './interface';
 
 const MAX_UPLOAD_FILES = 5;
 
@@ -27,6 +27,23 @@ export class UploadController {
     });
 
     return this.uploadService.upload(uploadInput, {
+      fileName: file.originalname, // 原始文件名, 用于展示给用户看
+      filePath: file.filename, // 当前文件名
+    });
+  }
+
+  @Post('addCourseWorkFile')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadCourseWorkFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() uploadInput: UploadCourseWorkInput,
+  ) {
+    // TODO: 完善 上传作业的接口
+    Object.keys(uploadInput).forEach((key) => {
+      uploadInput[key] = Number(uploadInput[key]);
+    });
+
+    return this.uploadService.uploadCourseWorkFile(uploadInput, {
       fileName: file.originalname, // 原始文件名, 用于展示给用户看
       filePath: file.filename, // 当前文件名
     });
