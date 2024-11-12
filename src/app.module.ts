@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { UploadModule } from './upload/upload.module';
 import { FilesModule } from './files/files.module';
 import { CourseworkModule } from './coursework/coursework.module';
+import { GptModule } from './gpt/gpt.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CourseworkModule } from './coursework/coursework.module';
     UploadModule,
     FilesModule,
     CourseworkModule,
+    GptModule,
   ],
   controllers: [AppController],
   providers: [AppService],
