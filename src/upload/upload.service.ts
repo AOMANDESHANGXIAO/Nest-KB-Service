@@ -91,6 +91,7 @@ export class UploadService extends SqlService {
     }
     // 存到数据库表中
     await this.transaction(async () => {
+      // 存储文件信息
       const sql = this.generateInsertSql<Student_File_Storage>(
         'student_file_storage',
         [
@@ -117,6 +118,12 @@ export class UploadService extends SqlService {
         }),
       );
       await this.insert(sql);
+      // 记录用户操作
+      await this.log({
+        action: 'upload_file',
+        student_id: uploadInput.student_id,
+        node_id: uploadInput.topic_id,
+      });
     });
     return {
       data: {},

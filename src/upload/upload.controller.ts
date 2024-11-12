@@ -38,7 +38,6 @@ export class UploadController {
     @UploadedFile() file: Express.Multer.File,
     @Body() uploadInput: UploadCourseWorkInput,
   ) {
-    // TODO: 完善 上传作业的接口
     Object.keys(uploadInput).forEach((key) => {
       uploadInput[key] = Number(uploadInput[key]);
     });

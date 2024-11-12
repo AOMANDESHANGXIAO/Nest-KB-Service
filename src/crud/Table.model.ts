@@ -106,6 +106,7 @@ export interface Class_ {
 export interface StudentActionLog {
   id: number;
   action:
+    | 'upload_file'
     | 'propose'
     | 'check_group'
     | 'check_idea'
