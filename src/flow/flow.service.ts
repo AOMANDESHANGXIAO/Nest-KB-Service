@@ -245,8 +245,27 @@ export class FlowService extends SqlService {
         arguKey = await this.insert(
           this.generateInsertSql<NodeTable>(
             'node_table',
-            ['topic_id', 'type', 'student_id', 'created_time', 'version'],
-            [[topic_id, NodeTypeEnum.idea, student_id, 'NOW', version]],
+            [
+              'topic_id',
+              'type',
+              'student_id',
+              'created_time',
+              'version',
+              'content',
+            ],
+            [
+              [
+                topic_id,
+                NodeTypeEnum.idea,
+                student_id,
+                'NOW',
+                version,
+                JSON.stringify({
+                  nodes: nodes,
+                  edges: edges,
+                }),
+              ],
+            ],
           ),
         );
       } else {
@@ -257,7 +276,6 @@ export class FlowService extends SqlService {
         if (res.length === 0) {
           return this.failResponse('没有找到该论证节点');
         }
-
         // 判断arguKey是否存在
       }
 

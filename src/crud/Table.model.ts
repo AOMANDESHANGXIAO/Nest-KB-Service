@@ -48,6 +48,7 @@ export interface NodeTable {
   topic_id: number;
   created_time: Date;
   version: number;
+  content: string;
 }
 export interface NodeScoreTable {
   id: number;

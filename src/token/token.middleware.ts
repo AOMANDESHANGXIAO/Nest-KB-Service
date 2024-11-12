@@ -30,7 +30,7 @@ export class TokenMiddleware implements NestMiddleware {
     } catch (err) {
       // 需要将中间件的异常包装成一个promise，在promise中抛出异常
       // 否则全局过滤器不会捕获这些异常
-      next(new HttpException('Invalid token', 401));
+      next(new HttpException(err, 401));
     }
   }
 }
