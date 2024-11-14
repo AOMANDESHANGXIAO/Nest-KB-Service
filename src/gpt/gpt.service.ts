@@ -12,26 +12,6 @@ import OpenAI from 'openai';
 import { SqlService } from 'src/db';
 import { SUCCESS_CHAT, FAILED_CHAT } from 'src/crud/Table.model';
 
-const ChatMessageLog = async (
-  sqlService: SqlService,
-  params: {
-    student_id: string;
-    topic_id: string;
-    new_message: string;
-    success: number;
-  },
-) => {
-  const { student_id, topic_id, new_message, success } = params;
-  // 记录学生发送的消息
-  await sqlService.transaction(async () => {
-    const sql = `
-  INSERT INTO chat_message_storage (student, topic, message, created_time, success) 
-  VALUES (${student_id}, ${topic_id}, ${new_message}, NOW(), ${success})
-  `;
-    await sqlService.insert(sql);
-  });
-};
-
 @Injectable()
 export class GptService extends SqlService {
   private readonly openai: OpenAI;
@@ -41,6 +21,23 @@ export class GptService extends SqlService {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
       baseURL: process.env.BASE_URL,
+    });
+  }
+
+  private async chatMessageLog(params: {
+    student_id: string;
+    topic_id: string;
+    new_message: string;
+    success: number;
+  }) {
+    const { student_id, topic_id, new_message, success } = params;
+    // 记录学生发送的消息
+    await this.transaction(async () => {
+      const sql = `
+      INSERT INTO chat_message_storage (student, topic, message, created_time, success) 
+      VALUES (${student_id}, ${topic_id}, ${new_message}, NOW(), ${success})
+      `;
+      await this.insert(sql);
     });
   }
 
@@ -83,7 +80,7 @@ export class GptService extends SqlService {
         }
       }
       res.write('data: [DONE]\n\n');
-      await ChatMessageLog(this, {
+      await this.chatMessageLog({
         student_id,
         topic_id,
         new_message,
@@ -93,7 +90,7 @@ export class GptService extends SqlService {
     } catch (error) {
       console.error('Stream response error:', error);
       res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
-      await ChatMessageLog(this, {
+      await this.chatMessageLog({
         student_id,
         topic_id,
         new_message,
