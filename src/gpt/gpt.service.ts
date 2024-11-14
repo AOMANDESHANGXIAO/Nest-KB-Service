@@ -9,26 +9,60 @@
 import { Injectable } from '@nestjs/common';
 import { Response } from 'express';
 import OpenAI from 'openai';
+import { SqlService } from 'src/db';
+import { SUCCESS_CHAT, FAILED_CHAT } from 'src/crud/Table.model';
+
+const ChatMessageLog = async (
+  sqlService: SqlService,
+  params: {
+    student_id: string;
+    topic_id: string;
+    new_message: string;
+    success: number;
+  },
+) => {
+  const { student_id, topic_id, new_message, success } = params;
+  // 记录学生发送的消息
+  await sqlService.transaction(async () => {
+    const sql = `
+  INSERT INTO chat_message_storage (student, topic, message, created_time, success) 
+  VALUES (${student_id}, ${topic_id}, ${new_message}, NOW(), ${success})
+  `;
+    await sqlService.insert(sql);
+  });
+};
 
 @Injectable()
-export class GptService {
+export class GptService extends SqlService {
   private readonly openai: OpenAI;
 
   constructor() {
+    super();
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
-      baseURL: 'https://ark.cn-beijing.volces.com/api/v3',
+      baseURL: process.env.BASE_URL,
     });
   }
 
   async streamCompletion(
     messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
+    params: {
+      student_id: string;
+      topic_id: string;
+      new_message: string; // 前端发送时带上这一次的信息
+    },
     res: Response,
   ) {
+    // 参数检查
+    const { student_id, topic_id, new_message } = params;
+    if (!student_id || !topic_id || !new_message) {
+      throw new Error('student_id, topic_id and new_message are required');
+    }
+
+    // 流式传输
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-
     try {
       const stream = await this.openai.chat.completions.create({
         messages: [
@@ -38,7 +72,7 @@ export class GptService {
           },
           ...messages,
         ],
-        model: 'ep-20241112112248-r7llx',
+        model: process.env.MODEL,
         stream: true,
       });
 
@@ -48,12 +82,23 @@ export class GptService {
           res.write(`data: ${JSON.stringify({ content })}\n\n`);
         }
       }
-
       res.write('data: [DONE]\n\n');
+      await ChatMessageLog(this, {
+        student_id,
+        topic_id,
+        new_message,
+        success: SUCCESS_CHAT,
+      });
       res.end();
     } catch (error) {
       console.error('Stream response error:', error);
       res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+      await ChatMessageLog(this, {
+        student_id,
+        topic_id,
+        new_message,
+        success: FAILED_CHAT,
+      });
       res.end();
     }
   }

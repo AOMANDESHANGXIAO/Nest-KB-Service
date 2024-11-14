@@ -1,6 +1,9 @@
 /**
  * 数据库表的声明
  */
+/**
+ * 记录学生
+ */
 export interface StudentTable {
   id: number;
   group_id: number;
@@ -9,6 +12,9 @@ export interface StudentTable {
   password: string;
   nickname: string;
 }
+/**
+ * 记录小组
+ */
 export interface GroupTable {
   id: number;
   group_name: string;
@@ -17,6 +23,9 @@ export interface GroupTable {
   group_color: string;
   belong_class_id: number;
 }
+/**
+ * 记录讨论
+ */
 export interface DiscussTable {
   id: number;
   topic_content: string;
@@ -27,6 +36,9 @@ export interface DiscussTable {
   status: 'propose' | 'feedback' | 'summary' | 'close';
   courseWork: string; // 话题作业的内容
 }
+/**
+ * 记录讨论行为
+ */
 export interface DiscussAction {
   id: number;
   action: 'feedback' | 'summary' | 'close';
@@ -34,11 +46,17 @@ export interface DiscussAction {
   created_time: Date;
   operator_id: number;
 }
+/**
+ * 观点图谱节点类型
+ */
 export enum NodeTypeEnum {
   idea = 'idea',
   topic = 'topic',
   group = 'group',
 }
+/**
+ * 记录观点图谱节点
+ */
 export interface NodeTable {
   id: number;
   type: NodeTypeEnum;
@@ -50,6 +68,9 @@ export interface NodeTable {
   version: number;
   content: string;
 }
+/**
+ * 记录观点图谱节点评分
+ */
 export interface NodeScoreTable {
   id: number;
   recognition: 0 | 1;
@@ -61,6 +82,9 @@ export interface NodeScoreTable {
   version: number;
   created_time: Date;
 }
+/**
+ * 记录观点图谱边
+ */
 export interface EdgeTable {
   id: number;
   source: number;
@@ -68,12 +92,18 @@ export interface EdgeTable {
   topic_id: number;
   type: 'approve' | 'reject' | 'group_to_discuss' | 'idea_to_group';
 }
+/**
+ * 论辩节点类型
+ */
 export enum ArguNodeTypeEnum {
   data = 'data',
   claim = 'claim',
   warrant = 'warrant',
   rebuttal = 'rebuttal',
 }
+/**
+ * 记录论辩节点
+ */
 export interface ArguNodeTable {
   id: number;
   type: ArguNodeTypeEnum;
@@ -83,6 +113,9 @@ export interface ArguNodeTable {
   arguId: string;
   creator: number; // 2024/9/9 新增 creator 字段
 }
+/**
+ * 记录论辩边
+ */
 export interface ArguEdgeTable {
   id: number;
   source: string;
@@ -92,17 +125,26 @@ export interface ArguEdgeTable {
   arguId: string;
   arguKey: number;
 }
+/**
+ * 记录管理员
+ */
 export interface AdminTable {
   id: number;
   username: string;
   password: string;
   nickname: string;
 }
+/**
+ * 记录班级
+ */
 export interface Class_ {
   id: number;
   class_name: string;
   status: 1;
 }
+/**
+ * 记录学生行为
+ */
 export interface StudentActionLog {
   id: number;
   action:
@@ -114,11 +156,15 @@ export interface StudentActionLog {
     | 'modify_group'
     | 'approve'
     | 'oppose'
-    | 'summary_group';
+    | 'summary_group'
+    | 'chat_gpt'; // 发送给gpt消息行为
   student_id: number;
   node_id: number;
   created_time: Date;
 }
+/**
+ * 记录学生上传的文件
+ */
 export interface Student_File_Storage {
   id: number;
   filename: string; // 文件的原名
@@ -131,6 +177,9 @@ export interface Student_File_Storage {
   download_count: number; // 这个字段记录被下载的次数
   topic_id: number; // 这个字段用来记录文件属于哪个话题
 }
+/**
+ * 记录学生上传的作业
+ */
 export interface Course_Work_Upload_Storage {
   id: number;
   student_id: number;
@@ -139,6 +188,19 @@ export interface Course_Work_Upload_Storage {
   file_path: string; // 存放地址
   upload_time: Date;
 }
+/**
+ * 记录学生与gpt的聊天记录
+ */
+export interface Chat_Message_Storage {
+  id: number;
+  student: number;
+  topic: number;
+  message: string;
+  created_time: Date;
+  success: number;
+}
+export const SUCCESS_CHAT = 1;
+export const FAILED_CHAT = 0;
 export type Tables =
   | 'student'
   | 'group'
@@ -153,4 +215,5 @@ export type Tables =
   | 'node_table_score'
   | 'student_action_log'
   | 'student_file_storage'
-  | 'course_work_upload_storage';
+  | 'course_work_upload_storage'
+  | 'chat_message_storage';

@@ -10,9 +10,20 @@ export class GptController {
     @Body()
     body: {
       messages: { role: 'user' | 'assistant' | 'system'; content: string }[];
+      student_id: string;
+      topic_id: string;
+      new_message: string;
     },
     @Res() res: Response,
   ) {
-    return this.gptService.streamCompletion(body.messages, res);
+    return this.gptService.streamCompletion(
+      body.messages,
+      {
+        student_id: body.student_id,
+        topic_id: body.topic_id,
+        new_message: body.new_message,
+      },
+      res,
+    );
   }
 }
