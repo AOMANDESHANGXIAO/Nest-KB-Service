@@ -24,6 +24,33 @@ export class GptService extends SqlService {
     });
   }
 
+  private escapeSqlString(str: string): string {
+    return str.replace(/[\0\n\r\b\t\\'"\x1a]/g, (s) => {
+      switch (s) {
+        case '\0':
+          return '\\0';
+        case '\n':
+          return '\\n';
+        case '\r':
+          return '\\r';
+        case '\b':
+          return '\\b';
+        case '\t':
+          return '\\t';
+        case '\x1a':
+          return '\\Z';
+        case "'":
+          return "''"; // 在 SQL 中，单引号需要用两个单引号转义
+        case '"':
+          return '\\"';
+        case '\\':
+          return '\\\\';
+        default:
+          return s;
+      }
+    });
+  }
+
   private async chatMessageLog(params: {
     student_id: string;
     topic_id: string;
@@ -31,11 +58,12 @@ export class GptService extends SqlService {
     success: number;
   }) {
     const { student_id, topic_id, new_message, success } = params;
-    // 记录学生发送的消息
-    await this.transaction(async () => {
+    // console.log('params', params);
+    this.transaction(async () => {
+      const escapedMessage = this.escapeSqlString(new_message);
       const sql = `
       INSERT INTO chat_message_storage (student, topic, message, created_time, success) 
-      VALUES (${student_id}, ${topic_id}, ${new_message}, NOW(), ${success})
+      VALUES (${student_id}, ${topic_id}, '${escapedMessage}', NOW(), ${success})
       `;
       await this.insert(sql);
     });
@@ -55,6 +83,7 @@ export class GptService extends SqlService {
     if (!student_id || !topic_id || !new_message) {
       throw new Error('student_id, topic_id and new_message are required');
     }
+    let isSuccess = false;
 
     // 流式传输
     res.setHeader('Content-Type', 'text/event-stream');
@@ -80,21 +109,17 @@ export class GptService extends SqlService {
         }
       }
       res.write('data: [DONE]\n\n');
-      await this.chatMessageLog({
-        student_id,
-        topic_id,
-        new_message,
-        success: SUCCESS_CHAT,
-      });
-      res.end();
+      isSuccess = true;
     } catch (error) {
       console.error('Stream response error:', error);
       res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+      isSuccess = false;
+    } finally {
       await this.chatMessageLog({
         student_id,
         topic_id,
         new_message,
-        success: FAILED_CHAT,
+        success: isSuccess ? SUCCESS_CHAT : FAILED_CHAT,
       });
       res.end();
     }
