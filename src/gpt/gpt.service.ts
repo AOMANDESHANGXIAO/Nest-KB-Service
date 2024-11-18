@@ -11,7 +11,7 @@ import { Response } from 'express';
 import OpenAI from 'openai';
 import { SqlService } from 'src/db';
 import { SUCCESS_CHAT, FAILED_CHAT } from 'src/crud/Table.model';
-
+import systemPrompt from './prompt';
 @Injectable()
 export class GptService extends SqlService {
   private readonly openai: OpenAI;
@@ -65,7 +65,13 @@ export class GptService extends SqlService {
       INSERT INTO chat_message_storage (student, topic, message, created_time, success) 
       VALUES (${student_id}, ${topic_id}, '${escapedMessage}', NOW(), ${success})
       `;
+      // 记录学生行为
       await this.insert(sql);
+      // 记录学生行为
+      await this.log({
+        action: 'chat_gpt',
+        student_id: Number(student_id),
+      });
     });
   }
 
@@ -94,7 +100,7 @@ export class GptService extends SqlService {
         messages: [
           {
             role: 'system',
-            content: '你是豆包，是由字节跳动开发的 AI 人工智能助手',
+            content: systemPrompt,
           },
           ...messages,
         ],

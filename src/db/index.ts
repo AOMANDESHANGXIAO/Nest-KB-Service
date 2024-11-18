@@ -260,14 +260,18 @@ class SqlService {
   }: {
     action: StudentActionLog['action'];
     student_id: StudentActionLog['student_id'];
-    node_id: StudentActionLog['node_id'];
+    node_id?: StudentActionLog['node_id'];
   }) {
+    const columns: Array<keyof StudentActionLog> = node_id
+      ? ['action', 'student_id', 'node_id', 'created_time']
+      : ['action', 'student_id', 'created_time'];
+    const values: Array<string | number> = node_id
+      ? [action, student_id, node_id, 'NOW']
+      : [action, student_id, 'NOW'];
     await this.insert(
-      this.generateInsertSql<StudentActionLog>(
-        'student_action_log',
-        ['action', 'student_id', 'node_id', 'created_time'],
-        [[action, student_id, node_id, 'NOW']],
-      ),
+      this.generateInsertSql<StudentActionLog>('student_action_log', columns, [
+        values,
+      ]),
     );
   }
 }
