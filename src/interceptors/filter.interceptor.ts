@@ -9,7 +9,7 @@ import {
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
-    console.log('发生了错误', exception.status);
+    console.log('发生了错误', exception);
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
     if (exception.status === 401) {

@@ -3,7 +3,7 @@ import { SqlService } from '../db/index';
 import { CreateDto, JoinDto } from './Models/index';
 import StudentCRUDer from 'src/crud/Student';
 import GroupCRUDer from 'src/crud/Group';
-import { GroupTable, StudentTable } from 'src/crud/Table.model';
+import { GroupTable, StudentTable, NodeTable } from 'src/crud/Table.model';
 
 @Injectable()
 export class GroupService extends SqlService {
@@ -15,6 +15,88 @@ export class GroupService extends SqlService {
     this.groupCrud = new GroupCRUDer(this);
   }
 
+  /**
+   *
+   * @param param0
+   * @returns
+   * 该方法用来拿到所有缺失的讨论话题id
+   */
+  private async getMissingGroupNodeIds({
+    class_id,
+    group_id,
+  }: {
+    class_id: number;
+    group_id: number;
+  }) {
+    // 1. 查询班级的所有讨论
+    const sqlAllDiscuss = `
+    SELECT
+      dt.id 
+    FROM
+      discussion dt 
+    WHERE
+      dt.topic_for_class_id = ${class_id}`;
+    const allDiscussIds = await this.query<{ id: number }>(sqlAllDiscuss);
+    // 2. 查询小组的讨论节点
+    const sqlGroupNode = `
+    SELECT
+      nt.topic_id as id
+    FROM
+      node_table nt 
+    WHERE
+      nt.class_id = ${class_id}
+      AND nt.group_id = ${group_id}`;
+    const groupNodes = await this.query<{ id: number }>(sqlGroupNode);
+    // 3. 判断小组的讨论节点是否都在班级的讨论中
+    const groupNodeIds = groupNodes.map((item) => item.id);
+    const missingNodeIds = allDiscussIds
+      .filter((item) => !groupNodeIds.includes(item.id))
+      .map((item) => item.id);
+    return missingNodeIds;
+  }
+
+  private async createGroupNodeFromMissingIds({
+    class_id,
+    group_id,
+    missingNodeIds,
+  }: {
+    class_id: number;
+    group_id: number;
+    missingNodeIds: number[];
+  }) {
+    const values = missingNodeIds.map((item) => [
+      'group', // type
+      '', // content
+      class_id, // class_id
+      group_id, // group_id
+      item, // topic_id
+      'NOW', // created_time
+      '1', // version
+    ]);
+    await this.insert(
+      this.generateInsertSql<NodeTable>(
+        'node_table',
+        [
+          'type',
+          'content',
+          'class_id',
+          'group_id',
+          'topic_id',
+          'created_time',
+          'version',
+        ],
+        values,
+      ),
+    );
+    await this.commit();
+    return true;
+  }
+  /**
+   *
+   * @param param0
+   * @returns
+   * @description 创建团队
+   */
   public async create({
     group_name,
     group_color,
@@ -34,7 +116,7 @@ export class GroupService extends SqlService {
     }
     // 创建团队
     let newGroup: GroupTable;
-    this.transaction(async () => {
+    await this.transaction(async () => {
       const groupId = await this.insert(
         this.generateInsertSql<GroupTable>(
           'group',
@@ -61,6 +143,21 @@ export class GroupService extends SqlService {
       ]);
 
       newGroup = await this.groupCrud.selectGroupByGroupId(+groupId);
+      // console.log('newGroup', newGroup);
+      // 当创建团队时，如果团队创建较晚，那么可能会没有小组讨论节点
+      // 因此需要创建小组讨论节点
+      const missingNodeIds = await this.getMissingGroupNodeIds({
+        class_id,
+        group_id: newGroup.id,
+      });
+      // console.log('missingNodeIds', missingNodeIds);
+      if (missingNodeIds.length > 0) {
+        await this.createGroupNodeFromMissingIds({
+          class_id,
+          group_id: newGroup.id,
+          missingNodeIds,
+        });
+      }
     });
 
     return {
