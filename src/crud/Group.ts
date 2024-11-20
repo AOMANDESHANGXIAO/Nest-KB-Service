@@ -153,7 +153,7 @@ export default class GroupCRUDer implements GroupCRUD {
     SELECT
       count( t1.id ) summary 
     FROM
-      node_revise_record_table t1
+      node_table_revise_logger t1
       JOIN student t2 ON t2.id = t1.student_id 
     WHERE
       t2.group_id = ${id};`;
@@ -193,7 +193,7 @@ export default class GroupCRUDer implements GroupCRUD {
     SELECT
       t2.nickname AS \`name\`, count( t1.id ) AS summaryNum 
     FROM
-      node_revise_record_table t1
+      node_table_revise_logger t1
       JOIN student t2 ON t1.student_id = t2.id
       JOIN \`group\` t3 ON t3.id = t2.group_id 
     WHERE
@@ -259,7 +259,7 @@ export default class GroupCRUDer implements GroupCRUD {
       t1.student_id as id,
       count( * ) AS summaryNum 
     FROM
-      node_revise_record_table t1
+      node_table_revise_logger t1
       JOIN node_table t2 ON t2.type = 'group'
       JOIN student t3 ON t3.id = t1.student_id 
       AND t3.group_id = ${id} 

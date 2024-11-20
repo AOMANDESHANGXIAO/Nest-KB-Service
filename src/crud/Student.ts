@@ -91,7 +91,7 @@ class StudentCRUDer implements StudentCRUD {
       SUM( CASE WHEN t2.type = 'group' THEN 1 ELSE 0 END ) AS summaryNum,
       Sum( CASE WHEN t2.type = 'idea' THEN 1 ELSE 0 END ) AS reviseNum 
     FROM
-      node_revise_record_table t1
+      node_table_revise_logger t1
       JOIN node_table t2 ON t2.type = 'group' 
       OR t2.type = 'idea'
       JOIN student t3 ON t3.id = t1.student_id 

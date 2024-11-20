@@ -146,10 +146,10 @@ CREATE TABLE `group`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 32 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '协作团队信息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Table structure for node_revise_record_table
+-- Table structure for node_table_revise_logger
 -- ----------------------------
-DROP TABLE IF EXISTS `node_revise_record_table`;
-CREATE TABLE `node_revise_record_table`  (
+DROP TABLE IF EXISTS `node_table_revise_logger`;
+CREATE TABLE `node_table_revise_logger`  (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `node_id` int(11) NOT NULL,
   `revise_content` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
@@ -158,8 +158,8 @@ CREATE TABLE `node_revise_record_table`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `node_id`(`node_id`) USING BTREE,
   INDEX `student_id`(`student_id`) USING BTREE,
-  CONSTRAINT `node_revise_record_table_ibfk_1` FOREIGN KEY (`node_id`) REFERENCES `node_table` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `node_revise_record_table_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `student` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+  CONSTRAINT `node_table_revise_logger_ibfk_1` FOREIGN KEY (`node_id`) REFERENCES `node_table` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `node_table_revise_logger_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `student` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE = InnoDB AUTO_INCREMENT = 30 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
