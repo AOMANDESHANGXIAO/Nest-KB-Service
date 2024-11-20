@@ -68,6 +68,15 @@ export interface NodeTable {
   version: number;
   content: string;
 }
+export interface NodeTableReviseLogger {
+  id: number;
+  node_id: number;
+  content: string;
+  version: number;
+  created_time: Date;
+  student_id: number;
+}
+
 /**
  * 记录观点图谱节点评分
  */
@@ -216,4 +225,5 @@ export type Tables =
   | 'student_action_log'
   | 'student_file_storage'
   | 'course_work_upload_storage'
-  | 'chat_message_storage';
+  | 'chat_message_storage'
+  | 'node_table_revise_logger';

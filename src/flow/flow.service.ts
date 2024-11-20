@@ -21,9 +21,8 @@ import { IndividualRadarData } from './Models';
 import * as _ from 'lodash';
 import { escapeSqlString } from 'src/utils/escapeString';
 import { getFormatterContent } from './flow.utils';
-/**
- * TODO: 实现发布小组观点功能API✅
- */
+import { logNodeRevise } from './flow.logger';
+
 @Injectable()
 export class FlowService extends SqlService {
   nodeCruder: NodeCRUDer;
@@ -204,6 +203,13 @@ export class FlowService extends SqlService {
           student_id: student_id,
           node_id: +arguKey,
         });
+        // 记录修改
+        await logNodeRevise(this, {
+          node_id: +arguKey,
+          student_id: student_id,
+          content: escapeSqlString(getFormatterContent(nodes)),
+          version: version,
+        });
         // 如果是提出观点,那么会自动连接到小组
         return this.conncetIdeaToGroup(+arguKey, student_id, topic_id);
       };
@@ -218,6 +224,13 @@ export class FlowService extends SqlService {
           action: replyType === 'approve' ? 'approve' : 'oppose',
           student_id: student_id,
           node_id: +replyNodeId,
+        });
+        // 记录修改
+        await logNodeRevise(this, {
+          node_id: +replyNodeId,
+          student_id: student_id,
+          content: escapeSqlString(getFormatterContent(nodes)),
+          version: version,
         });
         return this.insert(
           this.generateInsertSql(
@@ -241,6 +254,12 @@ export class FlowService extends SqlService {
         WHERE id = ${modifyNodeId};
         `;
       await this.update(updateSql);
+      await logNodeRevise(this, {
+        node_id: +modifyNodeId,
+        student_id: student_id,
+        content: escapeSqlString(getFormatterContent(nodes)),
+        version: version,
+      });
 
       const callback = async () => {
         await this.log({
@@ -356,7 +375,6 @@ export class FlowService extends SqlService {
     node_id: string,
     student_id: number,
   ) {
-    // TODO: 规范，还要查询引用状态等，因此单独啦一个方法出来
     return await this.queryNodeContentById(+node_id, student_id, 'group');
   }
 
@@ -384,6 +402,19 @@ export class FlowService extends SqlService {
         action: type === 'summary' ? 'summary_group' : 'modify_group',
         student_id: student_id,
         node_id: +groupNodeId,
+      });
+      // Update group node content
+      await this.update(
+        `UPDATE node_table SET content = '${escapeSqlString(
+          getFormatterContent(nodes),
+        )}', version = ${version} WHERE id = ${groupNodeId};`,
+      );
+      // 记录修改
+      await logNodeRevise(this, {
+        node_id: +groupNodeId,
+        student_id: student_id,
+        content: escapeSqlString(getFormatterContent(nodes)),
+        version: version,
       });
     };
     createdEffects.push(callback);
