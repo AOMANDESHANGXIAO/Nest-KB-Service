@@ -3,7 +3,12 @@ import { SqlService } from '../db/index';
 import { CreateDto, JoinDto } from './Models/index';
 import StudentCRUDer from 'src/crud/Student';
 import GroupCRUDer from 'src/crud/Group';
-import { GroupTable, StudentTable, NodeTable } from 'src/crud/Table.model';
+import {
+  GroupTable,
+  StudentTable,
+  NodeTable,
+  EdgeTable,
+} from 'src/crud/Table.model';
 
 @Injectable()
 export class GroupService extends SqlService {
@@ -73,23 +78,77 @@ export class GroupService extends SqlService {
       'NOW', // created_time
       '1', // version
     ]);
-    await this.insert(
-      this.generateInsertSql<NodeTable>(
-        'node_table',
-        [
-          'type',
-          'content',
-          'class_id',
-          'group_id',
-          'topic_id',
-          'created_time',
-          'version',
-        ],
-        values,
-      ),
-    );
-    await this.commit();
-    return true;
+    await this.transaction(async () => {
+      // 1. 创建小组讨论节点
+      await this.insert(
+        this.generateInsertSql<NodeTable>(
+          'node_table',
+          [
+            'type',
+            'content',
+            'class_id',
+            'group_id',
+            'topic_id',
+            'created_time',
+            'version',
+          ],
+          values,
+        ),
+      );
+      // 还要将groupNodes连接到讨论话题上
+      // 刷新
+      await this.commit();
+
+      const sqlNotConnectedGroupNode = `
+      SELECT
+        n.*,
+        target_node.id as target
+      FROM
+        node_table n
+        LEFT JOIN edge_table e ON n.id = e.source
+        LEFT JOIN node_table target_node ON e.target = target_node.id 
+        AND target_node.type = 'topic' 
+        AND e.type = 'group_to_discuss' 
+      WHERE
+        n.type = 'group' 
+        AND target_node.id IS NULL
+        AND n.class_id = ${class_id};`;
+      const notConnectedGroupNodes = await this.query<NodeTable>(
+        sqlNotConnectedGroupNode,
+      );
+      // console.log('notConnectedGroupNodes', notConnectedGroupNodes);
+      // 2. 查询出来所有type为topic的Node的节点
+      const sqlTopicNode = `
+      SELECT
+        id,
+        topic_id
+      FROM
+        node_table
+      WHERE
+        type = 'topic'
+        AND class_id = ${class_id};`;
+      const topicNodes = await this.query<{ id: number; topic_id: number }>(
+        sqlTopicNode,
+      );
+      // console.log('topicNodes', topicNodes);
+      // 3. 将groupNodes连接到讨论话题上
+      await this.insert(
+        this.generateInsertSql<EdgeTable>(
+          'edge_table',
+          ['source', 'target', 'type', 'topic_id'],
+          notConnectedGroupNodes
+            .map((item) => [
+              item.id,
+              topicNodes.find((topic) => topic.topic_id === item.topic_id)?.id,
+              'group_to_discuss',
+              item.topic_id,
+            ])
+            .filter((item) => item[1] !== undefined),
+        ),
+      );
+      // console.log('success');
+      // console.log('notConnectedGroupNodes', notConnectedGroupNodes);
+    });
   }
   /**
    *
