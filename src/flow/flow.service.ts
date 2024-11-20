@@ -753,7 +753,6 @@ export class FlowService extends SqlService {
     student_id: number,
     group_id: number,
   ) {
-    // TODO: 新增查询话题的推进进度 ✅
     const [
       individualArgument,
       peerInteraction,
@@ -780,6 +779,63 @@ export class FlowService extends SqlService {
         graphOption: peerInteractionFormatter(peerInteraction, nicknameOfGroup),
         barOption: replyAndModifyFormatter(replyAndModify, nicknameOfGroup),
         timeLineList: topicProcess,
+      },
+    };
+  }
+
+  public async queryGroupOpinionList({
+    topic_id,
+    group_id,
+    page,
+    page_size,
+  }: {
+    topic_id: number;
+    group_id: number;
+    page: number;
+    page_size: number;
+  }) {
+    // TODO: 查询小组观点列表
+    const sql = `
+    SELECT
+      nt.id,
+      nt.content,
+      st.nickname,
+      gt.group_color 
+    FROM
+      node_table nt
+      JOIN \`student\` st ON st.id = nt.student_id
+      JOIN \`group\` gt ON gt.id = st.group_id 
+    WHERE
+      nt.topic_id = ${topic_id} 
+      AND st.group_id = ${group_id}
+    LIMIT ${page_size} OFFSET ${page * page_size}
+    `;
+    const result = await this.query<{
+      id: number;
+      content: string;
+      nickname: string;
+      group_color: string;
+    }>(sql);
+    const totalNumSql = `
+        SELECT
+          COUNT(*) as count
+        FROM
+          node_table nt
+          JOIN \`student\` st ON st.id = nt.student_id
+          JOIN \`group\` gt ON gt.id = st.group_id 
+        WHERE
+          nt.topic_id = ${topic_id} 
+          AND st.group_id = ${group_id}
+    `;
+    const totalNum = await this.query<{ count: number }>(totalNumSql);
+
+    return {
+      data: {
+        list: result.map((item) => ({
+          ...item,
+          content: item.content ? item.content : '空',
+        })),
+        total: totalNum[0].count,
       },
     };
   }

@@ -81,4 +81,17 @@ export class FlowController {
   public async queryWordCloud(@Query('topic_id') topic_id: number) {
     return await this.flowService.queryWordCloud(topic_id);
   }
+
+  @Get('group_opinion_list')
+  public async queryGroupOpinionList(
+    @Query()
+    args: {
+      topic_id: number;
+      group_id: number;
+      page: number;
+      page_size: number;
+    },
+  ) {
+    return await this.flowService.queryGroupOpinionList(args);
+  }
 }
