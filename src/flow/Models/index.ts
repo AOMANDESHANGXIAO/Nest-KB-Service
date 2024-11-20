@@ -8,7 +8,13 @@ export interface CreateNewIdeaArgs {
     id: string;
     data: {
       inputValue: string;
-      _type: string;
+      _type:
+        | 'backing'
+        | 'warrant'
+        | 'claim'
+        | 'qualifier'
+        | 'rebuttal'
+        | 'data'; // 类型,
     };
     type: 'element';
   }>;

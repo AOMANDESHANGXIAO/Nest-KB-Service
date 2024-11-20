@@ -19,6 +19,8 @@ import {
 } from '../flow/Models/index';
 import { IndividualRadarData } from './Models';
 import * as _ from 'lodash';
+import { escapeSqlString } from 'src/utils/escapeString';
+import { getFormatterContent } from './flow.utils';
 /**
  * TODO: 实现发布小组观点功能API✅
  */
@@ -186,13 +188,14 @@ export class FlowService extends SqlService {
     args: CreateNewIdeaArgs,
     type?: 'idea' | 'reply' | 'modify',
   ) {
-    const { topic_id, student_id, nodes, edges } = args;
+    const { topic_id, student_id, nodes, edges, modifyNodeId } = args;
 
     const createdEffect: Array<() => Promise<any>> = [];
 
     let arguKey: string;
     let version: number = 1;
 
+    // 创建后的影响
     if (type === 'idea') {
       const callback = async () => {
         // 记录用户操作
@@ -226,9 +229,19 @@ export class FlowService extends SqlService {
       };
       createdEffect.push(callback);
     } else if (type === 'modify') {
-      const { modifyNodeId, student_id } = args;
+      const { student_id } = args;
       version =
         (await this.arguNodeCruder.FindLatestVersion(+modifyNodeId)) + 1;
+      // 修改时则依据传递过来的nodeId创建，arguKey
+      // 修改时需要更新content和version
+      const updateSql = `
+        UPDATE node_table 
+        SET content = '${escapeSqlString(getFormatterContent(nodes))}',
+            version = ${version}
+        WHERE id = ${modifyNodeId};
+        `;
+      await this.update(updateSql);
+
       const callback = async () => {
         await this.log({
           action: 'modify_idea',
@@ -260,17 +273,12 @@ export class FlowService extends SqlService {
                 student_id,
                 'NOW',
                 version,
-                JSON.stringify({
-                  nodes: nodes,
-                  edges: edges,
-                }),
+                escapeSqlString(getFormatterContent(nodes)),
               ],
             ],
           ),
         );
       } else {
-        // 修改时则依据传递过来的nodeId创建，arguKey
-        const { modifyNodeId } = args;
         arguKey = String(modifyNodeId);
         const res = await this.arguNodeCruder.queryByArguKey(+modifyNodeId);
         if (res.length === 0) {
