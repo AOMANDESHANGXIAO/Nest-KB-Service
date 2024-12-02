@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { QueryParams } from 'src/crud';
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
