@@ -51,3 +51,10 @@ export interface IndividualRadarData {
     }>;
   };
 }
+
+export interface CreateQuestionIdeaArgs {
+  topic_id: number;
+  reply_node_id: number; // node_id
+  question_content: string;
+  student_id: number; // 创建者的id
+}

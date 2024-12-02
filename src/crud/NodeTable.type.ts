@@ -19,4 +19,12 @@ type GroupType = {
   group_id: number;
 };
 
-export { IdeaType, TopicType, GroupType };
+type QuestionType = {
+  node_id: number;
+  content: string;
+  nickname: string;
+  group_color: string;
+  student_id: number;
+};
+
+export { IdeaType, TopicType, GroupType, QuestionType };

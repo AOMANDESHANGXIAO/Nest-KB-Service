@@ -1,7 +1,7 @@
 import { SqlService } from 'src/db';
 import { CRUDer } from './index';
 import { NodeTable, NodeTypeEnum } from './Table.model';
-import { IdeaType, TopicType, GroupType } from './NodeTable.type';
+import { IdeaType, TopicType, GroupType, QuestionType } from './NodeTable.type';
 
 export default class NodeCRUDer implements CRUDer {
   s: SqlService;
@@ -52,7 +52,13 @@ export default class NodeCRUDer implements CRUDer {
     topic_id: number;
     type: NodeTypeEnum.group;
   }): Promise<GroupType[]>; // Overload for 'group'
-
+  public async selectOneTypeByTopicId({
+    topic_id,
+    type,
+  }: {
+    topic_id: number;
+    type: NodeTypeEnum.question; // overload for 'question'
+  }): Promise<any>;
   public async selectOneTypeByTopicId({
     topic_id,
     type,
@@ -109,6 +115,24 @@ export default class NodeCRUDer implements CRUDer {
           AND t1.topic_id = ${topic_id};
           `;
         return await this.s.query<GroupType>(sql);
+      }
+      case 'question': {
+        const sql = `
+         SELECT
+          t1.id node_id,
+          t1.content,
+          t2.nickname,
+          t3.group_color,
+          t2.id student_id
+        FROM
+          node_table t1
+          LEFT JOIN student t2 ON t1.student_id = t2.id
+          JOIN \`group\` t3 ON t3.id = t2.group_id 
+        WHERE
+          t1.type = '${type}' 
+          AND t1.topic_id = ${topic_id};`;
+
+        return await this.s.query<QuestionType>(sql);
       }
     }
   }

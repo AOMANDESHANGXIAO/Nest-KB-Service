@@ -5,7 +5,12 @@ import NodeCRUDer from 'src/crud/NodeTable';
 import EdgeCRUDer from 'src/crud/EdgeTable';
 import ArguNodeCruder from 'src/crud/ArguNode';
 import ArguEdgeCruder from 'src/crud/ArguEdge';
-import { IdeaType, TopicType, GroupType } from 'src/crud/NodeTable.type';
+import {
+  IdeaType,
+  TopicType,
+  GroupType,
+  QuestionType,
+} from 'src/crud/NodeTable.type';
 import { NodeTable, NodeTypeEnum } from 'src/crud/Table.model';
 import {
   EdgeTable,
@@ -16,6 +21,7 @@ import {
 import {
   CreateNewIdeaArgs,
   CreateNewGroupIdeaArgs,
+  CreateQuestionIdeaArgs,
 } from '../flow/Models/index';
 import { IndividualRadarData } from './Models';
 import * as _ from 'lodash';
@@ -40,11 +46,12 @@ export class FlowService extends SqlService {
   }
 
   public async queryFlow(topic_id: number) {
-    const [ideas, topics, groups, edges]: [
+    const [ideas, topics, groups, edges, questions]: [
       IdeaType[],
       TopicType[],
       GroupType[],
       Pick<EdgeTable, 'source' | 'target' | 'type' | 'id'>[],
+      QuestionType[],
     ] = await Promise.all([
       this.nodeCruder.selectOneTypeByTopicId({
         topic_id,
@@ -59,6 +66,10 @@ export class FlowService extends SqlService {
         type: NodeTypeEnum.group,
       }),
       this.edgeCruder.selectAllByTopicId(topic_id),
+      this.nodeCruder.selectOneTypeByTopicId({
+        topic_id,
+        type: NodeTypeEnum.question,
+      }),
     ]);
 
     return {
@@ -98,6 +109,20 @@ export class FlowService extends SqlService {
             type: NodeTypeEnum.topic,
             data: {
               text: item.content,
+            },
+            position: {
+              x: 0,
+              y: 0,
+            },
+          })),
+          ...questions.map((item) => ({
+            id: String(item.node_id),
+            type: NodeTypeEnum.question,
+            data: {
+              name: item.nickname,
+              id: item.node_id,
+              bgc: item.group_color,
+              student_id: item.student_id,
             },
             position: {
               x: 0,
@@ -180,6 +205,86 @@ export class FlowService extends SqlService {
           _type: item.type,
         })),
       },
+    };
+  }
+
+  public async queryQuestionNodeContentById({
+    node_id,
+    student_id,
+  }: {
+    node_id: number;
+    student_id: number;
+  }) {
+    // 查询内容
+    const sql = `
+    SELECT
+      nt.content,
+      st.nickname 
+    FROM
+      node_table nt
+      JOIN student st ON st.id = nt.student_id 
+    WHERE
+      nt.id = ${node_id};`;
+
+    const [res] = await this.query<{ content: string; nickname: string }>(sql);
+    await this.log({
+      action: 'check_question',
+      student_id: student_id,
+      node_id: node_id,
+    });
+    return {
+      data: {
+        content: res.content,
+        nickname: res.nickname,
+      },
+    };
+  }
+
+  public async createQuestionIdea(args: CreateQuestionIdeaArgs) {
+    const { question_content, reply_node_id, student_id, topic_id } = args;
+    // 插入一个QuestionNode
+    await this.transaction(async () => {
+      const insertId = await this.insert(
+        // 插入NodeTable
+        this.generateInsertSql<NodeTable>(
+          'node_table',
+          [
+            'type',
+            'content',
+            'student_id',
+            'topic_id',
+            'created_time',
+            'version',
+          ],
+          [
+            [
+              NodeTypeEnum.question,
+              question_content,
+              student_id,
+              topic_id,
+              'NOW',
+              1,
+            ],
+          ],
+        ),
+      );
+      await this.insert(
+        this.generateInsertSql<EdgeTable>(
+          'edge_table',
+          ['source', 'target', 'type', 'topic_id'],
+          [[insertId, reply_node_id, 'question_to_idea', topic_id]],
+        ),
+      );
+      // logger
+      await this.log({
+        action: 'question',
+        student_id: student_id,
+        node_id: Number(insertId),
+      });
+    });
+    return {
+      data: {},
+      message: 'OK',
     };
   }
 

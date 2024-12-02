@@ -3,7 +3,11 @@
  */
 import { Controller, Get, Post, Query, Body, Patch } from '@nestjs/common';
 import { FlowService } from './flow.service';
-import { CreateNewIdeaArgs, CreateNewGroupIdeaArgs } from './Models/index';
+import {
+  CreateNewIdeaArgs,
+  CreateNewGroupIdeaArgs,
+  CreateQuestionIdeaArgs,
+} from './Models/index';
 
 @Controller('flow')
 export class FlowController {
@@ -44,6 +48,22 @@ export class FlowController {
   @Post('reply_idea')
   public async replyIdea(@Body() args: CreateNewIdeaArgs) {
     return await this.flowService.createNewIdea(args, 'reply');
+  }
+
+  @Post('question_idea')
+  public async questionIdea(@Body() args: CreateQuestionIdeaArgs) {
+    return await this.flowService.createQuestionIdea(args);
+  }
+
+  @Get('check_question_content')
+  public async checkQuestionContent(
+    @Query('student_id') student_id: number,
+    @Query('node_id') node_id: number,
+  ) {
+    return await this.flowService.queryQuestionNodeContentById({
+      student_id,
+      node_id,
+    });
   }
 
   @Patch('modify_idea')

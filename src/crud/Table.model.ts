@@ -53,6 +53,7 @@ export enum NodeTypeEnum {
   idea = 'idea',
   topic = 'topic',
   group = 'group',
+  question = 'question',
 }
 /**
  * 记录观点图谱节点
@@ -166,7 +167,9 @@ export interface StudentActionLog {
     | 'approve'
     | 'oppose'
     | 'summary_group'
-    | 'chat_gpt'; // 发送给gpt消息行为
+    | 'chat_gpt' // 发送给gpt消息行为
+    | 'question' // 提问行为
+    | 'check_question'; // 查看问题行为
   student_id: number;
   node_id: number;
   created_time: Date;
