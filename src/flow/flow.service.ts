@@ -11,7 +11,11 @@ import {
   GroupType,
   QuestionType,
 } from 'src/crud/NodeTable.type';
-import { NodeTable, NodeTypeEnum } from 'src/crud/Table.model';
+import {
+  NodeTable,
+  NodeTypeEnum,
+  StudentActionLog,
+} from 'src/crud/Table.model';
 import {
   EdgeTable,
   ArguNodeTable,
@@ -22,6 +26,7 @@ import {
   CreateNewIdeaArgs,
   CreateNewGroupIdeaArgs,
   CreateQuestionIdeaArgs,
+  ResponseQuestionArgs,
 } from '../flow/Models/index';
 import { IndividualRadarData } from './Models';
 import * as _ from 'lodash';
@@ -325,8 +330,13 @@ export class FlowService extends SqlService {
       // 如果是回复观点那么要将创建的观点连接到被回复的观点
       const callback = async () => {
         // log 回复观点
+        const actionMap: Record<string, StudentActionLog['action']> = {
+          approve: 'approve',
+          reject: 'oppose',
+          response: 'response_question',
+        };
         await this.log({
-          action: replyType === 'approve' ? 'approve' : 'oppose',
+          action: actionMap[replyType],
           student_id: student_id,
           node_id: +replyNodeId,
         });
@@ -451,6 +461,94 @@ export class FlowService extends SqlService {
     return {
       data: {},
       message: 'create success',
+    };
+  }
+
+  public async responseQuestion(args: ResponseQuestionArgs) {
+    const { nodes, edges, student_id, questionNodeId, topic_id } = args;
+    const version = 1;
+    await this.transaction(async () => {
+      // 1. 在NodeTable(观点)上创建一个节点
+      const source = await this.insert(
+        this.generateInsertSql<NodeTable>(
+          'node_table',
+          [
+            'topic_id',
+            'type',
+            'student_id',
+            'created_time',
+            'version',
+            'content',
+          ],
+          [
+            [
+              topic_id,
+              NodeTypeEnum.idea,
+              student_id,
+              'NOW',
+              version,
+              escapeSqlString(getFormatterContent(nodes)),
+            ],
+          ],
+        ),
+      );
+      // 2. 在EdgeTable(观点)上创建一条边
+      const coulmnValues = [
+        source,
+        questionNodeId,
+        topic_id,
+        'response_to_question',
+      ];
+      await this.insert(
+        this.generateInsertSql<EdgeTable>(
+          'edge_table',
+          ['source', 'target', 'topic_id', 'type'],
+          [coulmnValues],
+        ),
+      );
+      // 3. 更新ArgumentNode节点
+      // 创建数据插入ArguNodeTable,ArguEdgeTable
+      await Promise.all([
+        this.insert(
+          this.generateInsertSql<ArguNodeTable>(
+            'argunode',
+            ['type', 'content', 'arguKey', 'version', 'arguId', 'creator'],
+            nodes.map((item) => [
+              item.data._type,
+              item.data.inputValue,
+              source,
+              version,
+              item.id,
+              student_id,
+            ]),
+          ),
+        ),
+        this.insert(
+          this.generateInsertSql<ArguEdgeTable>(
+            'arguedge',
+            ['type', 'source', 'target', 'arguKey', 'version', 'arguId'],
+            edges.map((item) => [
+              item._type,
+              item.source,
+              item.target,
+              source,
+              version,
+              item.id,
+            ]),
+          ),
+        ),
+      ]);
+
+      // 4. logger记录回复question
+      await this.log({
+        action: 'response_question',
+        student_id: student_id,
+        node_id: Number(source),
+      });
+    });
+    return {
+      data: {},
+      message: 'OK',
     };
   }
 

@@ -7,6 +7,7 @@ import {
   CreateNewIdeaArgs,
   CreateNewGroupIdeaArgs,
   CreateQuestionIdeaArgs,
+  ResponseQuestionArgs,
 } from './Models/index';
 
 @Controller('flow')
@@ -53,6 +54,11 @@ export class FlowController {
   @Post('question_idea')
   public async questionIdea(@Body() args: CreateQuestionIdeaArgs) {
     return await this.flowService.createQuestionIdea(args);
+  }
+
+  @Post('response_question')
+  public async responseQuestion(@Body() args: ResponseQuestionArgs) {
+    return await this.flowService.responseQuestion(args);
   }
 
   @Get('check_question_content')

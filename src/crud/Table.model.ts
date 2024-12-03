@@ -169,7 +169,8 @@ export interface StudentActionLog {
     | 'summary_group'
     | 'chat_gpt' // 发送给gpt消息行为
     | 'question' // 提问行为
-    | 'check_question'; // 查看问题行为
+    | 'check_question' // 查看问题行为
+    | 'response_question'; // 回答问题行为
   student_id: number;
   node_id: number;
   created_time: Date;
