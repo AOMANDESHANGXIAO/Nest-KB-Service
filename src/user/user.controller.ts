@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Query, Get } from '@nestjs/common';
+import { Controller, Post, Body, Query, Get, Patch } from '@nestjs/common';
 import { UserService } from './user.service';
 import { Login, QueryCollaboration } from './models/';
 import { Create } from './models/';
@@ -15,6 +15,13 @@ export class UserController {
   @Post('signup')
   create(@Body() createUserParam: Create) {
     return this.userService.create(createUserParam);
+  }
+
+  @Patch('update')
+  updatePassword(
+    @Body() updatePasswordParam: { username: string; newPassword: string },
+  ) {
+    return this.userService.changePassword(updatePasswordParam);
   }
 
   @Get('collInfo')

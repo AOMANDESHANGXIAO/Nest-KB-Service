@@ -289,5 +289,5 @@ class SqlService {
     );
   }
 }
-
+// export default new SqlService();
 export { SqlService };

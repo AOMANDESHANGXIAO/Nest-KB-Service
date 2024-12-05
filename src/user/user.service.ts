@@ -280,4 +280,30 @@ export class UserService extends SqlService {
       { name: '修改', max: maxValues[4] },
     ];
   }
+
+  // 新增修改密码的方法
+  public async changePassword({
+    username,
+    newPassword,
+  }: {
+    username: string;
+    newPassword: string;
+  }) {
+    // 判断用户是否存在
+    const isExist = await this.studentCRUDer.findOneExist(username);
+    if (!isExist) {
+      throw new HttpException('用户不存在', 400);
+    }
+    // 更新密码
+    const hashedPassword = await this.pwdHandler.hasdPassword(newPassword);
+    const sql = `
+    UPDATE student SET password = '${hashedPassword}' WHERE username = '${username}'`;
+    await this.transaction(async () => {
+      await this.update(sql);
+    });
+    return {
+      message: '密码修改成功',
+      data: {},
+    };
+  }
 }

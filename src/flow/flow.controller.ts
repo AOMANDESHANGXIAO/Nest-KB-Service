@@ -14,8 +14,14 @@ import {
 export class FlowController {
   constructor(private readonly flowService: FlowService) {}
   @Get('query')
-  public async queryFlow(@Query('topic_id') topic_id: number) {
-    return await this.flowService.queryFlow(topic_id);
+  public async queryFlow(
+    @Query('topic_id') topic_id: number,
+    @Query('student_id') student_id: number,
+  ) {
+    return await this.flowService.queryFlow({
+      topic_id,
+      student_id,
+    });
   }
 
   @Get('query_content')

@@ -40,17 +40,21 @@ export class FlowService extends SqlService {
   edgeCruder: EdgeCRUDer;
   arguNodeCruder: ArguNodeCruder;
   arguEdgeCruder: ArguEdgeCruder;
-  // groupCruder: GroupCRUDer;
   constructor() {
     super();
     this.nodeCruder = new NodeCRUDer(this);
     this.edgeCruder = new EdgeCRUDer(this);
     this.arguNodeCruder = new ArguNodeCruder(this);
     this.arguEdgeCruder = new ArguEdgeCruder(this);
-    // this.groupCruder = new GroupCRUDer(this);
   }
 
-  public async queryFlow(topic_id: number) {
+  public async queryFlow({
+    topic_id,
+    student_id,
+  }: {
+    topic_id: number;
+    student_id: number;
+  }) {
     const [ideas, topics, groups, edges, questions]: [
       IdeaType[],
       TopicType[],
@@ -76,7 +80,48 @@ export class FlowService extends SqlService {
         type: NodeTypeEnum.question,
       }),
     ]);
-
+    /**
+     * TODO: 查询出所有回复student_id的节点
+     */
+    const sqlAllResponse = `
+    SELECT
+      s1.nickname AS 'sourceNodeStudent',
+      s2.nickname AS 'targetNodeStudent',
+      n1.content AS 'sourceNodeContent',
+      s1.id AS 'sourceStudentId',
+      s2.id AS 'targetStudentId',
+      e.source,
+      e.target,
+      e.type 
+    FROM
+      edge_table e
+      JOIN node_table n1 ON n1.id = e.source
+      JOIN node_table n2 ON n2.id = e.target
+      JOIN student s1 ON s1.id = n1.student_id
+      JOIN student s2 ON s2.id = n2.student_id 
+    WHERE
+      e.type != 'idea_to_group' 
+      AND e.type != 'group_to_discuss' 
+      AND (s2.id = ${student_id} OR s1.id = ${student_id})
+      AND (S2.id != s1.id)
+      AND e.topic_id = ${topic_id};`;
+    const allResponse = await this.query<{
+      sourceNodeStudent: string;
+      targetNodeStudent: string;
+      sourceNodeContent: string;
+      sourceStudentId: number;
+      targetStudentId: number;
+      source: string;
+      target: string;
+      type: string;
+    }>(sqlAllResponse);
+    /**
+     * 找到学生回复的节点
+     */
+    const studentHasResponsedIds = allResponse
+      .filter((item) => String(item.sourceStudentId) === String(student_id))
+      .map((item) => String(item.target));
+    console.log('studentHasResponsedIds', studentHasResponsedIds);
     return {
       data: {
         nodes: [
@@ -142,6 +187,21 @@ export class FlowService extends SqlService {
           _type: item.type,
           animated: false,
         })),
+        related: allResponse
+          .filter(
+            // 首先过滤掉自己的回复
+            (item) => String(item.sourceStudentId) !== String(student_id),
+          )
+          .map((item) => {
+            return {
+              ...item,
+              sourceStudentId: String(item.sourceStudentId),
+              targetStudentId: String(item.targetStudentId),
+              source: String(item.source),
+              target: String(item.target),
+              responsed: studentHasResponsedIds.includes(String(item.source)),
+            };
+          }),
       },
     };
   }

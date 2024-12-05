@@ -77,7 +77,6 @@ export interface NodeTableReviseLogger {
   created_time: Date;
   student_id: number;
 }
-
 /**
  * 记录观点图谱节点评分
  */
@@ -100,7 +99,13 @@ export interface EdgeTable {
   source: number;
   target: number;
   topic_id: number;
-  type: 'approve' | 'reject' | 'group_to_discuss' | 'idea_to_group';
+  type:
+    | 'approve'
+    | 'reject'
+    | 'group_to_discuss'
+    | 'idea_to_group'
+    | 'question_to_idea'
+    | 'response_to_question';
 }
 /**
  * 论辩节点类型
