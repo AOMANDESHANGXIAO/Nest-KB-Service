@@ -9,13 +9,27 @@ class SqlService {
     // conncetion = null;
     this.dbConfig = config.db;
   }
+  /**
+   * 检查连接是否有效
+   */
+  async isConnectionValid() {
+    try {
+      if (this.conncetion) {
+        await this.conncetion.ping(); // 检查连接是否有效
+        return true;
+      }
+    } catch (err) {
+      console.log('Connection is not valid, reconnecting...', err);
+    }
+    return false;
+  }
 
   /**
    * 建立连接
    */
   async setupConnection() {
     try {
-      if (!this.conncetion) {
+      if (!this.conncetion || !(await this.isConnectionValid())) {
         this.conncetion = await mysql.createConnection(this.dbConfig);
         console.log('Connection success');
         return;
