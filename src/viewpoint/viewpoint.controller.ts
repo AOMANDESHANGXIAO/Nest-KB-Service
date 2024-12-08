@@ -2,6 +2,7 @@ import { Controller, Post, Body } from '@nestjs/common';
 import { ViewpointService } from './viewpoint.service';
 import {
   CreateAgreeArgs,
+  CreateAskArgs,
   CreateDisAgreeArgs,
   CreateIdeaArgs,
   CreateTopicArgs,
@@ -28,5 +29,9 @@ export class ViewpointController {
   @Post('disagree')
   createDisagree(@Body() args: CreateDisAgreeArgs) {
     return this.viewpointService.createDisAgree(args);
+  }
+  @Post('ask')
+  createAsk(@Body() args: CreateAskArgs) {
+    return this.viewpointService.createAsk(args);
   }
 }

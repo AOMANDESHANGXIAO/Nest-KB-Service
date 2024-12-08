@@ -27,3 +27,9 @@ export interface CreateDisAgreeArgs {
   disagree_reason: string;
   disagree_suggestion: string;
 }
+export interface CreateAskArgs {
+  topic_id: number;
+  student_id: number;
+  target: number;
+  ask_question: string;
+}

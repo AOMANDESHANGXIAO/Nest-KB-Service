@@ -5,6 +5,7 @@ import {
   CreateIdeaArgs,
   CreateAgreeArgs,
   CreateDisAgreeArgs,
+  CreateAskArgs,
 } from './viewpoint.interface';
 import {
   DiscussTable,
@@ -16,6 +17,7 @@ import {
   ViewPoint_Idea,
   ViewPoint_Agree,
   ViewPoint_Disagree,
+  ViewPoint_Ask,
 } from 'src/crud/Table.model';
 
 class ViewPointSqlTools {
@@ -267,6 +269,40 @@ export class ViewpointService extends SqlService {
     });
     return {
       data: {},
+    };
+  }
+  async createAsk(args: CreateAskArgs) {
+    const { topic_id, student_id, ask_question, target } = args;
+    await this.transaction(async () => {
+      await this.insert(
+        this.generateInsertSql<ViewPoint_Ask>( // 假设 Ask 记录也使用 ViewPoint_Idea 类型
+          'viewpoint',
+          [
+            'topic_id',
+            'student_id',
+            'created_time',
+            'ask_question',
+            'removed',
+            'target',
+            'type',
+          ],
+          [
+            [
+              topic_id,
+              student_id,
+              'NOW',
+              ask_question,
+              VIEWPOINT_NOT_REMOVED,
+              target,
+              VIEWPOINT_TYPE.ASK,
+            ],
+          ],
+        ),
+      );
+    });
+    return {
+      data: {},
+      message: '提问成功',
     };
   }
 }
