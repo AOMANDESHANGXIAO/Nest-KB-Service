@@ -7,6 +7,7 @@ import {
   CreateDisAgreeArgs,
   CreateAskArgs,
   CreateResponseArgs,
+  GetTopicArgs,
 } from './viewpoint.interface';
 import {
   DiscussTable,
@@ -339,6 +340,27 @@ export class ViewpointService extends SqlService {
     return {
       data: {},
       message: '响应成功',
+    };
+  }
+  async getTopic(args: GetTopicArgs) {
+    const { topic_id } = args;
+    const sql = `
+    SELECT
+      topic_content AS content,
+      \`status\`
+    FROM
+      discussion 
+    WHERE
+      id = ${topic_id};`;
+    const [res] = await this.query<{
+      content: string;
+      status: string;
+    }>(sql);
+    return {
+      data: {
+        content: res.content,
+        status: res.status,
+      },
     };
   }
 }

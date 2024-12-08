@@ -39,3 +39,6 @@ export interface CreateResponseArgs {
   target: number;
   response_content: string;
 }
+export interface GetTopicArgs {
+  topic_id: number;
+}

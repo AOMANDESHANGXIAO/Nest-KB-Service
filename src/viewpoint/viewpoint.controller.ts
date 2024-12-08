@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { ViewpointService } from './viewpoint.service';
 import {
   CreateAgreeArgs,
@@ -38,5 +38,11 @@ export class ViewpointController {
   @Post('response')
   createResponse(@Body() args: CreateResponseArgs) {
     return this.viewpointService.createResponse(args);
+  }
+  @Get('topic')
+  getTopicById(@Query('id') id: number) {
+    return this.viewpointService.getTopic({
+      topic_id: id,
+    });
   }
 }
