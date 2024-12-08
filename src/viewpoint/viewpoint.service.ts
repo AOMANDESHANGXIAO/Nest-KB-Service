@@ -151,7 +151,7 @@ export class ViewpointService extends SqlService {
         topic_id,
       });
       // 创建一个idea连接到groupViewPoint上
-      await this.insert(
+      const viewpoint_id = await this.insert(
         this.generateInsertSql<ViewPoint_Idea>(
           'viewpoint',
           [
@@ -180,6 +180,11 @@ export class ViewpointService extends SqlService {
           ],
         ),
       );
+      viewpointLogger.pubsub.publish('createViewPoint', {
+        service: this,
+        student_id,
+        viewpoint_id: Number(viewpoint_id),
+      });
     });
     return {
       data: {},
@@ -196,7 +201,7 @@ export class ViewpointService extends SqlService {
       target,
     } = args;
     await this.transaction(async () => {
-      await this.insert(
+      const viewpoint_id = await this.insert(
         this.generateInsertSql<ViewPoint_Agree>( // 假设同意记录也使用 ViewPoint_Idea 类型
           'viewpoint',
           [
@@ -225,7 +230,11 @@ export class ViewpointService extends SqlService {
           ],
         ),
       );
-      // 创建一个同意连接到指定的观点上
+      viewpointLogger.pubsub.publish('createViewPoint', {
+        service: this,
+        student_id,
+        viewpoint_id: Number(viewpoint_id),
+      });
     });
     return {
       data: {},
@@ -241,7 +250,7 @@ export class ViewpointService extends SqlService {
       target,
     } = args;
     await this.transaction(async () => {
-      await this.insert(
+      const viewpoint_id = await this.insert(
         this.generateInsertSql<ViewPoint_Disagree>( // 假设不同意记录也使用 ViewPoint_Idea 类型
           'viewpoint',
           [
@@ -271,6 +280,11 @@ export class ViewpointService extends SqlService {
         ),
       );
       // 创建一个不同意连接到指定的观点上
+      viewpointLogger.pubsub.publish('createViewPoint', {
+        service: this,
+        student_id,
+        viewpoint_id: Number(viewpoint_id),
+      });
     });
     return {
       data: {},
@@ -279,7 +293,7 @@ export class ViewpointService extends SqlService {
   async createAsk(args: CreateAskArgs) {
     const { topic_id, student_id, ask_question, target } = args;
     await this.transaction(async () => {
-      await this.insert(
+      const id = await this.insert(
         this.generateInsertSql<ViewPoint_Ask>( // 假设 Ask 记录也使用 ViewPoint_Idea 类型
           'viewpoint',
           [
@@ -304,6 +318,11 @@ export class ViewpointService extends SqlService {
           ],
         ),
       );
+      viewpointLogger.pubsub.publish('createViewPoint', {
+        service: this,
+        student_id,
+        viewpoint_id: Number(id),
+      });
     });
     return {
       data: {},
@@ -313,7 +332,7 @@ export class ViewpointService extends SqlService {
   async createResponse(args: CreateResponseArgs) {
     const { topic_id, student_id, response_content, target } = args;
     await this.transaction(async () => {
-      await this.insert(
+      const id = await this.insert(
         this.generateInsertSql<ViewPoint_Response>( // 假设 Response 记录使用 ViewPoint_Response 类型
           'viewpoint',
           [
@@ -338,6 +357,11 @@ export class ViewpointService extends SqlService {
           ],
         ),
       );
+      viewpointLogger.pubsub.publish('createViewPoint', {
+        service: this,
+        student_id,
+        viewpoint_id: Number(id),
+      });
     });
     return {
       data: {},
@@ -387,6 +411,7 @@ export class ViewpointService extends SqlService {
      * 发布消息
      */
     viewpointLogger.pubsub.publish('checkViewPoint', {
+      service: this,
       checked_viewpoint_id: id,
       student_id: student_id,
     });
