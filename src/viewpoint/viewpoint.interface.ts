@@ -33,3 +33,9 @@ export interface CreateAskArgs {
   target: number;
   ask_question: string;
 }
+export interface CreateResponseArgs {
+  topic_id: number;
+  student_id: number;
+  target: number;
+  response_content: string;
+}

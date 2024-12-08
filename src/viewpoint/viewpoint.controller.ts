@@ -5,6 +5,7 @@ import {
   CreateAskArgs,
   CreateDisAgreeArgs,
   CreateIdeaArgs,
+  CreateResponseArgs,
   CreateTopicArgs,
 } from './viewpoint.interface';
 /**
@@ -33,5 +34,9 @@ export class ViewpointController {
   @Post('ask')
   createAsk(@Body() args: CreateAskArgs) {
     return this.viewpointService.createAsk(args);
+  }
+  @Post('response')
+  createResponse(@Body() args: CreateResponseArgs) {
+    return this.viewpointService.createResponse(args);
   }
 }
