@@ -20,6 +20,7 @@ class SqlService {
       }
     } catch (err) {
       console.log('Connection is not valid, reconnecting...', err);
+      return false;
     }
     return false;
   }

@@ -219,6 +219,206 @@ export interface Chat_Message_Storage {
 }
 export const SUCCESS_CHAT = 1;
 export const FAILED_CHAT = 0;
+/**
+ * ViewPoint接口，表示记录所有观点的结构
+ * 对应数据库中的ViewPoint表
+ */
+export const VIEWPOINT_NO_TARGET = -1;
+export const VIEWPOINT_REMOVED = 1;
+export const VIEWPOINT_NOT_REMOVED = 0;
+export enum VIEWPOINT_TYPE {
+  TOPIC = 'topic',
+  GROUP = 'group',
+  IDEA = 'idea',
+  AGREE = 'agree',
+  DISAGREE = 'disagree',
+  ASK = 'ask',
+  RESPONSE = 'response',
+}
+export interface ViewPoint {
+  /**
+   * 标记主键，自增的唯一标识符
+   */
+  id: number;
+  /**
+   * 观点的类型，取值范围为'topic'|'group'|'idea'|'agree'|'disagree'|'ask'|'response'
+   */
+  type: VIEWPOINT_TYPE;
+  /**
+   * 当type为'topic'时对应的班级ID，可选属性（可能为null或undefined）
+   */
+  class_id: number;
+  /**
+   * 当type为'group'时对应的小组ID，可选属性（可能为null或undefined）
+   */
+  group_id: number;
+  /**
+   * 当type为'idea'、'agree'、'disagree'、'ask'、'response'时对应的学生ID，可选属性（可能为null或undefined）
+   */
+  student_id: number;
+  /**
+   * 关联的话题ID，必填属性
+   */
+  topic_id: number;
+  /**
+   * 观点创建的时间，必填属性
+   */
+  created_time: Date;
+  /**
+   * 描述指向的Node的id（即指向本表的id），用于依据此生成edge，必填属性
+   */
+  target: number;
+  /**
+   * 描述是否被删除，1表示未被删除，0表示被删除，一旦有指向该节点的节点，则不可以被删除，必填属性
+   */
+  removed: number;
+  /**
+   * 当type为'idea'|'group'时提出观点时的结论，可选属性（可能为null或undefined）
+   */
+  idea_conclusion: string;
+  /**
+   * 当type为'idea'|'group'时提出观点时的理由，可选属性（可能为null或undefined）
+   */
+  idea_reason: string;
+  /**
+   * 当type为'idea'|'group'时提出观点时的限制条件，可选属性（可能为null或undefined）
+   */
+  idea_limitation: string;
+  /**
+   * 当type为'disagree'时不同意的点，可选属性（可能为null或undefined）
+   */
+  disagree_viewpoint: string;
+  /**
+   * 当type为'disagree'时不同意的原因，可选属性（可能为null或undefined）
+   */
+  disagree_reason: string;
+  /**
+   * 当type为'disagree'时不同意时提出的建议，可选属性（可能为null或undefined）
+   */
+  disagree_suggestion: string;
+  /**
+   * 当type为'agree'时同意的点，可选属性（可能为null或undefined）
+   */
+  agree_viewpoint: string;
+  /**
+   * 当type为'agree'时同意的理由，可选属性（可能为null或undefined）
+   */
+  agree_reason: string;
+  /**
+   * 当type为'agree'时同意时给出的补充，可选属性（可能为null或undefined）
+   */
+  agree_supplement: string;
+  /**
+   * 当type为'ask'时提问时的问题，可选属性（可能为null或undefined）
+   */
+  ask_question: string;
+  /**
+   * 当type为'response'时回应（又称解释）的内容，可选属性（可能为null或undefined）
+   */
+  response_content: string;
+}
+// 对应'topic'类型的ViewPoint结构
+export interface ViewPoint_Topic
+  extends Pick<
+    ViewPoint,
+    | 'id'
+    | 'type'
+    | 'topic_id'
+    | 'created_time'
+    | 'target'
+    | 'removed'
+    | 'class_id'
+  > {}
+
+// 对应'group'类型的ViewPoint结构
+export interface ViewPoint_Group
+  extends Pick<
+    ViewPoint,
+    | 'id'
+    | 'type'
+    | 'topic_id'
+    | 'created_time'
+    | 'target'
+    | 'removed'
+    | 'group_id'
+  > {}
+
+// 对应'idea'类型的ViewPoint结构
+export interface ViewPoint_Idea
+  extends Pick<
+    ViewPoint,
+    | 'id'
+    | 'type'
+    | 'topic_id'
+    | 'created_time'
+    | 'target'
+    | 'removed'
+    | 'student_id'
+    | 'idea_conclusion'
+    | 'idea_reason'
+    | 'idea_limitation'
+  > {}
+
+// 对应'agree'类型的ViewPoint结构
+export interface ViewPoint_Agree
+  extends Pick<
+    ViewPoint,
+    | 'id'
+    | 'type'
+    | 'topic_id'
+    | 'created_time'
+    | 'target'
+    | 'removed'
+    | 'student_id'
+    | 'agree_viewpoint'
+    | 'agree_reason'
+    | 'agree_supplement'
+  > {}
+
+// 对应'disagree'类型的ViewPoint结构
+export interface ViewPoint_Disagree
+  extends Pick<
+    ViewPoint,
+    | 'id'
+    | 'type'
+    | 'topic_id'
+    | 'created_time'
+    | 'target'
+    | 'removed'
+    | 'student_id'
+    | 'disagree_viewpoint'
+    | 'disagree_reason'
+    | 'disagree_suggestion'
+  > {}
+
+// 对应'ask'类型的ViewPoint结构
+export interface ViewPoint_Ask
+  extends Pick<
+    ViewPoint,
+    | 'id'
+    | 'type'
+    | 'topic_id'
+    | 'created_time'
+    | 'target'
+    | 'removed'
+    | 'student_id'
+    | 'ask_question'
+  > {}
+
+// 对应'response'类型的ViewPoint结构
+export interface ViewPoint_Response
+  extends Pick<
+    ViewPoint,
+    | 'id'
+    | 'type'
+    | 'topic_id'
+    | 'created_time'
+    | 'target'
+    | 'removed'
+    | 'student_id'
+    | 'response_content'
+  > {}
+
 export type Tables =
   | 'student'
   | 'group'
@@ -235,4 +435,5 @@ export type Tables =
   | 'student_file_storage'
   | 'course_work_upload_storage'
   | 'chat_message_storage'
-  | 'node_table_revise_logger';
+  | 'node_table_revise_logger'
+  | 'viewpoint';

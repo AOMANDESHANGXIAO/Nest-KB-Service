@@ -11,6 +11,7 @@ import { UploadModule } from './upload/upload.module';
 import { FilesModule } from './files/files.module';
 import { CourseworkModule } from './coursework/coursework.module';
 import { GptModule } from './gpt/gpt.module';
+import { ViewpointModule } from './viewpoint/viewpoint.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { GptModule } from './gpt/gpt.module';
     FilesModule,
     CourseworkModule,
     GptModule,
+    ViewpointModule,
   ],
   controllers: [AppController],
   providers: [AppService],
