@@ -45,4 +45,14 @@ export class ViewpointController {
       topic_id: id,
     });
   }
+  @Get('idea')
+  getIdeaById(
+    @Query('id') id: number,
+    @Query('student_id') student_id: number,
+  ) {
+    return this.viewpointService.getIdea({
+      id,
+      student_id,
+    });
+  }
 }

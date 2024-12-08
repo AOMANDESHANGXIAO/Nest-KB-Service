@@ -42,3 +42,7 @@ export interface CreateResponseArgs {
 export interface GetTopicArgs {
   topic_id: number;
 }
+export interface GetIdeaArgs {
+  id: number;
+  student_id: number;
+}

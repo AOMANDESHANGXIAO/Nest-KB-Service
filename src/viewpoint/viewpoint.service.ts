@@ -8,6 +8,7 @@ import {
   CreateAskArgs,
   CreateResponseArgs,
   GetTopicArgs,
+  GetIdeaArgs,
 } from './viewpoint.interface';
 import {
   DiscussTable,
@@ -22,6 +23,7 @@ import {
   ViewPoint_Ask,
   ViewPoint_Response,
 } from 'src/crud/Table.model';
+import { viewpointLogger } from './viewpoint.logger';
 
 class ViewPointSqlTools {
   static async getTopicNodeId(s: SqlService, topicId: number) {
@@ -360,6 +362,38 @@ export class ViewpointService extends SqlService {
       data: {
         content: res.content,
         status: res.status,
+      },
+    };
+  }
+  async getIdea(args: GetIdeaArgs) {
+    const { id, student_id } = args;
+    const sql = `
+    SELECT
+      vp.idea_conclusion,
+      vp.idea_reason,
+      vp.idea_limitation,
+      vp.target
+    FROM
+      viewpoint vp
+    WHERE
+      vp.id = ${id}`;
+    const [res] = await this.query<{
+      idea_conclusion: string;
+      idea_reason: string;
+      idea_limitation: string;
+      target: number;
+    }>(sql);
+    /**
+     * 发布消息
+     */
+    viewpointLogger.pubsub.publish('checkViewPoint', {
+      checked_viewpoint_id: id,
+      student_id: student_id,
+    });
+    return {
+      data: {
+        ...res,
+        target: String(res.target),
       },
     };
   }
