@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { SqlService } from 'src/db';
-import { CreateTopicArgs, CreateIdeaArgs } from './viewpoint.interface';
+import {
+  CreateTopicArgs,
+  CreateIdeaArgs,
+  CreateAgreeArgs,
+} from './viewpoint.interface';
 import {
   DiscussTable,
   ViewPoint_Topic,
@@ -9,6 +13,7 @@ import {
   VIEWPOINT_NOT_REMOVED,
   ViewPoint_Group,
   ViewPoint_Idea,
+  ViewPoint_Agree,
 } from 'src/crud/Table.model';
 
 class ViewPointSqlTools {
@@ -170,6 +175,51 @@ export class ViewpointService extends SqlService {
     return {
       data: {},
       message: '创建成功',
+    };
+  }
+  async createAgree(args: CreateAgreeArgs) {
+    const {
+      topic_id,
+      student_id,
+      agree_reason,
+      agree_supplement,
+      agree_viewpoint,
+      target,
+    } = args;
+    await this.transaction(async () => {
+      await this.insert(
+        this.generateInsertSql<ViewPoint_Agree>( // 假设同意记录也使用 ViewPoint_Idea 类型
+          'viewpoint',
+          [
+            'topic_id',
+            'student_id',
+            'created_time',
+            'agree_reason',
+            'agree_supplement',
+            'agree_viewpoint',
+            'removed',
+            'target',
+            'type',
+          ],
+          [
+            [
+              topic_id,
+              student_id,
+              'NOW',
+              agree_reason,
+              agree_supplement,
+              agree_viewpoint,
+              VIEWPOINT_NOT_REMOVED,
+              target,
+              VIEWPOINT_TYPE.AGREE, // 假设有一个 AGREEMENT 类型
+            ],
+          ],
+        ),
+      );
+      // 创建一个同意连接到指定的观点上
+    });
+    return {
+      data: {},
     };
   }
 }

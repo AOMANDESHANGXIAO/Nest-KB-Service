@@ -11,3 +11,11 @@ export interface CreateIdeaArgs {
   idea_reason: string;
   idea_limitation: string;
 }
+export interface CreateAgreeArgs {
+  topic_id: number;
+  student_id: number;
+  agree_viewpoint: string;
+  agree_reason: string;
+  agree_supplement: string;
+  target: number;
+}

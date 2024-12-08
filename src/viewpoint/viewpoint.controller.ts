@@ -1,6 +1,10 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { ViewpointService } from './viewpoint.service';
-import { CreateIdeaArgs, CreateTopicArgs } from './viewpoint.interface';
+import {
+  CreateAgreeArgs,
+  CreateIdeaArgs,
+  CreateTopicArgs,
+} from './viewpoint.interface';
 /**
  * 控制器,控制观点的交互
  */
@@ -15,5 +19,9 @@ export class ViewpointController {
   @Post('idea')
   createIdea(@Body() args: CreateIdeaArgs) {
     return this.viewpointService.createIdea(args);
+  }
+  @Post('agree')
+  createAgree(@Body() args: CreateAgreeArgs) {
+    return this.viewpointService.createAgree(args);
   }
 }
