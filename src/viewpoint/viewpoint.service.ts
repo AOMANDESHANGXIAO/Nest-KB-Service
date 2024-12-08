@@ -4,6 +4,7 @@ import {
   CreateTopicArgs,
   CreateIdeaArgs,
   CreateAgreeArgs,
+  CreateDisAgreeArgs,
 } from './viewpoint.interface';
 import {
   DiscussTable,
@@ -14,6 +15,7 @@ import {
   ViewPoint_Group,
   ViewPoint_Idea,
   ViewPoint_Agree,
+  ViewPoint_Disagree,
 } from 'src/crud/Table.model';
 
 class ViewPointSqlTools {
@@ -217,6 +219,51 @@ export class ViewpointService extends SqlService {
         ),
       );
       // 创建一个同意连接到指定的观点上
+    });
+    return {
+      data: {},
+    };
+  }
+  async createDisAgree(args: CreateDisAgreeArgs) {
+    const {
+      topic_id,
+      student_id,
+      disagree_reason,
+      disagree_suggestion,
+      disagree_viewpoint,
+      target,
+    } = args;
+    await this.transaction(async () => {
+      await this.insert(
+        this.generateInsertSql<ViewPoint_Disagree>( // 假设不同意记录也使用 ViewPoint_Idea 类型
+          'viewpoint',
+          [
+            'topic_id',
+            'student_id',
+            'created_time',
+            'disagree_reason',
+            'disagree_suggestion',
+            'disagree_viewpoint',
+            'removed',
+            'target',
+            'type',
+          ],
+          [
+            [
+              topic_id,
+              student_id,
+              'NOW',
+              disagree_reason,
+              disagree_suggestion,
+              disagree_viewpoint,
+              VIEWPOINT_NOT_REMOVED,
+              target,
+              VIEWPOINT_TYPE.DISAGREE,
+            ],
+          ],
+        ),
+      );
+      // 创建一个不同意连接到指定的观点上
     });
     return {
       data: {},

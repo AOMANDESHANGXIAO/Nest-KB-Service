@@ -14,8 +14,16 @@ export interface CreateIdeaArgs {
 export interface CreateAgreeArgs {
   topic_id: number;
   student_id: number;
+  target: number;
   agree_viewpoint: string;
   agree_reason: string;
   agree_supplement: string;
+}
+export interface CreateDisAgreeArgs {
+  topic_id: number;
+  student_id: number;
   target: number;
+  disagree_viewpoint: string;
+  disagree_reason: string;
+  disagree_suggestion: string;
 }
