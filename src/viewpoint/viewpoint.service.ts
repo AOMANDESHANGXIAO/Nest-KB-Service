@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { SqlService } from 'src/db';
-import { CreateTopicArgs } from './viewpoint.interface';
+import { CreateTopicArgs, CreateIdeaArgs } from './viewpoint.interface';
 import {
   DiscussTable,
   ViewPoint_Topic,
@@ -8,7 +8,43 @@ import {
   VIEWPOINT_NO_TARGET,
   VIEWPOINT_NOT_REMOVED,
   ViewPoint_Group,
+  ViewPoint_Idea,
 } from 'src/crud/Table.model';
+
+class ViewPointSqlTools {
+  static async getTopicNodeId(s: SqlService, topicId: number) {
+    const [id] = await s.query<{
+      id: number;
+    }>(`
+      SELECT id FROM viewpoint WHERE topic_id = ${topicId} AND type = '${VIEWPOINT_TYPE.TOPIC}';
+      `);
+    return String(id);
+  }
+  static async getGroupNodeId(
+    s: SqlService,
+    {
+      student_id,
+      topic_id,
+    }: {
+      student_id: number;
+      topic_id: number;
+    },
+  ) {
+    const sql = `
+    SELECT
+      vp.id 
+    FROM
+      viewpoint vp
+      JOIN student s ON s.id = ${student_id} 
+    WHERE
+      vp.group_id = s.group_id 
+      AND vp.topic_id = ${topic_id};`;
+    const [id] = await s.query<{
+      id: number;
+    }>(sql);
+    return String(id.id);
+  }
+}
 
 @Injectable()
 export class ViewpointService extends SqlService {
@@ -79,6 +115,55 @@ export class ViewpointService extends SqlService {
             VIEWPOINT_TYPE.GROUP,
             'NOW',
           ]),
+        ),
+      );
+    });
+    return {
+      data: {},
+      message: '创建成功',
+    };
+  }
+  async createIdea(args: CreateIdeaArgs) {
+    const {
+      topic_id,
+      student_id,
+      idea_conclusion,
+      idea_reason,
+      idea_limitation,
+    } = args;
+    await this.transaction(async () => {
+      const groupNodeId = await ViewPointSqlTools.getGroupNodeId(this, {
+        student_id,
+        topic_id,
+      });
+      // 创建一个idea连接到groupViewPoint上
+      await this.insert(
+        this.generateInsertSql<ViewPoint_Idea>(
+          'viewpoint',
+          [
+            'topic_id',
+            'student_id',
+            'created_time',
+            'idea_conclusion',
+            'idea_limitation',
+            'idea_reason',
+            'removed',
+            'target',
+            'type',
+          ],
+          [
+            [
+              topic_id,
+              student_id,
+              'NOW',
+              idea_conclusion,
+              idea_limitation,
+              idea_reason,
+              VIEWPOINT_NOT_REMOVED,
+              groupNodeId,
+              VIEWPOINT_TYPE.IDEA,
+            ],
+          ],
         ),
       );
     });
