@@ -82,4 +82,14 @@ export class ViewpointController {
       student_id,
     });
   }
+  @Get('response')
+  getResponseById(
+    @Query('id') id: number,
+    @Query('student_id') student_id: number,
+  ) {
+    return this.viewpointService.getResponse({
+      id,
+      student_id,
+    });
+  }
 }

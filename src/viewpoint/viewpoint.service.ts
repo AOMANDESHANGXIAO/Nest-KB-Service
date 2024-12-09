@@ -521,4 +521,34 @@ export class ViewpointService extends SqlService {
       },
     };
   }
+  async getResponse(args: GetContentArgs) {
+    const { id, student_id } = args;
+    const sql = `
+    SELECT
+      vp.response_content,
+      vp.target target_viewpoint_id,
+      vp2.student_id target_student_id
+    FROM
+      viewpoint vp
+      JOIN viewpoint vp2 ON vp2.id = vp.target 
+      WHERE
+      vp.id = ${id}`;
+    const [res] = await this.query<{
+      response_content: string;
+      target_viewpoint_id: number;
+      target_student_id: number;
+    }>(sql);
+    viewpointLogger.pubsub.publish('checkViewPoint', {
+      service: this,
+      checked_viewpoint_id: id,
+      student_id,
+    });
+    return {
+      data: {
+        ...res,
+        target_viewpoint_id: String(res.target_viewpoint_id),
+        target_student_id: String(res.target_student_id),
+      },
+    };
+  }
 }
