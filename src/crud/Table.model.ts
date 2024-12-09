@@ -430,7 +430,6 @@ export interface ViewPoint_Logger {
   created_time: Date;
   action: ViewPoint_Logger_Action;
 }
-
 export type Tables =
   | 'student'
   | 'group'

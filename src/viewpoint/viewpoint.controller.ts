@@ -55,4 +55,14 @@ export class ViewpointController {
       student_id,
     });
   }
+  @Get('agree')
+  getAgreeById(
+    @Query('id') id: number,
+    @Query('student_id') student_id: number,
+  ) {
+    return this.viewpointService.getAgree({
+      id,
+      student_id,
+    });
+  }
 }

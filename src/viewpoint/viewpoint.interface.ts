@@ -42,7 +42,10 @@ export interface CreateResponseArgs {
 export interface GetTopicArgs {
   topic_id: number;
 }
-export interface GetIdeaArgs {
+/**
+ * 通用参数
+ */
+export interface GetContentArgs {
   id: number;
   student_id: number;
 }

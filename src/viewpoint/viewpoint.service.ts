@@ -8,7 +8,7 @@ import {
   CreateAskArgs,
   CreateResponseArgs,
   GetTopicArgs,
-  GetIdeaArgs,
+  GetContentArgs,
 } from './viewpoint.interface';
 import {
   DiscussTable,
@@ -389,7 +389,7 @@ export class ViewpointService extends SqlService {
       },
     };
   }
-  async getIdea(args: GetIdeaArgs) {
+  async getIdea(args: GetContentArgs) {
     const { id, student_id } = args;
     const sql = `
     SELECT
@@ -418,7 +418,42 @@ export class ViewpointService extends SqlService {
     return {
       data: {
         ...res,
-        target: String(res.target),
+        target_viewpoint_id: String(res.target),
+      },
+    };
+  }
+  async getAgree(args: GetContentArgs) {
+    const { id, student_id } = args;
+    const sql = `
+    SELECT
+      vp.agree_viewpoint,
+      vp.agree_reason,
+      vp.agree_supplement,
+      vp.target target_viewpoint_id,
+      vp2.student_id target_student_id
+    FROM
+      viewpoint vp
+      JOIN viewpoint vp2 ON vp2.id = vp.target 
+    WHERE
+      vp.id = ${id}`;
+    const [res] = await this.query<{
+      agree_viewpoint: string;
+      agree_reason: string;
+      agree_supplement: string;
+      target_viewpoint_id: number;
+      target_student_id: number;
+    }>(sql);
+
+    viewpointLogger.pubsub.publish('checkViewPoint', {
+      service: this,
+      checked_viewpoint_id: id,
+      student_id,
+    });
+    return {
+      data: {
+        ...res,
+        target_viewpoint_id: String(res.target_viewpoint_id),
+        target_student_id: String(res.target_student_id),
       },
     };
   }
