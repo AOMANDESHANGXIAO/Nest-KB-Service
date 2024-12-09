@@ -14,7 +14,16 @@ import {
 @Controller('viewpoint')
 export class ViewpointController {
   constructor(private readonly viewpointService: ViewpointService) {}
-
+  @Get('list')
+  getViewpointList(
+    @Query('id') id: number,
+    @Query('student_id') student_id: number,
+  ) {
+    return this.viewpointService.queryViewPointList({
+      topic_id: id,
+      student_id,
+    });
+  }
   @Post('topic')
   createTopic(@Body() args: CreateTopicArgs) {
     return this.viewpointService.createTopic(args);
