@@ -341,6 +341,9 @@ export interface ViewPoint_Group
     | 'target'
     | 'removed'
     | 'group_id'
+    | 'idea_conclusion'
+    | 'idea_reason'
+    | 'idea_limitation'
   > {}
 
 // 对应'idea'类型的ViewPoint结构

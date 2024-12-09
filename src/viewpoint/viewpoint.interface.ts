@@ -49,3 +49,10 @@ export interface GetContentArgs {
   id: number;
   student_id: number;
 }
+/**
+ * 查询ViewPoint参数
+ */
+export interface GetViewPointListArgs {
+  topic_id: number;
+  student_id: number;
+}

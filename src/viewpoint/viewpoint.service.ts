@@ -9,6 +9,7 @@ import {
   CreateResponseArgs,
   GetTopicArgs,
   GetContentArgs,
+  // GetViewPointListArgs,
 } from './viewpoint.interface';
 import {
   DiscussTable,
@@ -62,6 +63,8 @@ class ViewPointSqlTools {
 
 @Injectable()
 export class ViewpointService extends SqlService {
+  // async queryViewPointList(args: GetViewPointListArgs){
+  // }
   async createTopic(args: CreateTopicArgs) {
     const { content, class_id, creator_id, status } = args;
 
@@ -120,7 +123,17 @@ export class ViewpointService extends SqlService {
       await this.insert(
         this.generateInsertSql<ViewPoint_Group>(
           'viewpoint',
-          ['group_id', 'removed', 'target', 'topic_id', 'type', 'created_time'],
+          [
+            'group_id',
+            'removed',
+            'target',
+            'topic_id',
+            'type',
+            'created_time',
+            'idea_conclusion',
+            'idea_limitation',
+            'idea_reason',
+          ],
           allGroupIds.map((item) => [
             item.id,
             VIEWPOINT_NOT_REMOVED,
@@ -128,6 +141,9 @@ export class ViewpointService extends SqlService {
             insertDiscussionId,
             VIEWPOINT_TYPE.GROUP,
             'NOW',
+            '',
+            '',
+            '',
           ]),
         ),
       );
@@ -386,6 +402,39 @@ export class ViewpointService extends SqlService {
       data: {
         content: res.content,
         status: res.status,
+      },
+    };
+  }
+  async getGroup(args: GetContentArgs) {
+    const { id, student_id } = args;
+    const sql = `
+    SELECT
+      vp.idea_conclusion,
+      vp.idea_reason,
+      vp.idea_limitation,
+      vp.target target_viewpoint_id
+    FROM
+      viewpoint vp
+    WHERE
+      vp.id = ${id}`;
+    const [res] = await this.query<{
+      idea_conclusion: string;
+      idea_reason: string;
+      idea_limitation: string;
+      target_viewpoint_id: number;
+    }>(sql);
+    /**
+     * 发布消息
+     */
+    viewpointLogger.pubsub.publish('checkViewPoint', {
+      service: this,
+      checked_viewpoint_id: id,
+      student_id: student_id,
+    });
+    return {
+      data: {
+        ...res,
+        target_viewpoint_id: String(res.target_viewpoint_id),
       },
     };
   }
