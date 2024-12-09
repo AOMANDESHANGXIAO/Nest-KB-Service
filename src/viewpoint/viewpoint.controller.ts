@@ -75,4 +75,11 @@ export class ViewpointController {
       student_id,
     });
   }
+  @Get('ask')
+  getAskById(@Query('id') id: number, @Query('student_id') student_id: number) {
+    return this.viewpointService.getAsk({
+      id,
+      student_id,
+    });
+  }
 }
