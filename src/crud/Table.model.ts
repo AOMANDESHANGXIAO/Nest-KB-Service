@@ -418,6 +418,18 @@ export interface ViewPoint_Response
     | 'student_id'
     | 'response_content'
   > {}
+export enum ViewPoint_Logger_Action {
+  CREATE = 'create',
+  CHECK = 'check',
+  UPDATE = 'update',
+}
+export interface ViewPoint_Logger {
+  id: number;
+  student_id: number;
+  viewpoint_id: number;
+  created_time: Date;
+  action: ViewPoint_Logger_Action;
+}
 
 export type Tables =
   | 'student'
@@ -436,4 +448,5 @@ export type Tables =
   | 'course_work_upload_storage'
   | 'chat_message_storage'
   | 'node_table_revise_logger'
-  | 'viewpoint';
+  | 'viewpoint'
+  | 'viewpoint_log';

@@ -1,5 +1,9 @@
 import PubSub from 'src/utils/eventEmitter';
 import { SqlService } from 'src/db';
+import {
+  ViewPoint_Logger,
+  ViewPoint_Logger_Action,
+} from 'src/crud/Table.model';
 /**
  * 发布订阅的事件及处理函数定义
  */
@@ -29,7 +33,9 @@ interface Event {
     student_id: number;
   };
 }
-
+/**
+ * TODO: 使用Mysql表存储日志
+ */
 class ViewpointLogger {
   pubsub: PubSub<Event>;
   constructor() {
@@ -37,20 +43,48 @@ class ViewpointLogger {
     /**
      * checkViewPoint事件
      */
-    this.pubsub.subscribe('checkViewPoint', (data) => {
-      console.log('checkViewPoint', data);
+    this.pubsub.subscribe('checkViewPoint', async (data) => {
+      const { service, checked_viewpoint_id, student_id } = data;
+      await service.insert(
+        service.generateInsertSql<ViewPoint_Logger>(
+          'viewpoint_log',
+          ['student_id', 'viewpoint_id', 'created_time', 'action'],
+          [
+            [
+              student_id,
+              checked_viewpoint_id,
+              'NOW',
+              ViewPoint_Logger_Action.CHECK,
+            ],
+          ],
+        ),
+      );
     });
     /**
      * createViewPoint事件
      */
-    this.pubsub.subscribe('createViewPoint', (data) => {
-      console.log('createViewPoint', data);
+    this.pubsub.subscribe('createViewPoint', async (data) => {
+      const { service, student_id, viewpoint_id } = data;
+      await service.insert(
+        service.generateInsertSql<ViewPoint_Logger>(
+          'viewpoint_log',
+          ['student_id', 'viewpoint_id', 'created_time', 'action'],
+          [[student_id, viewpoint_id, 'NOW', ViewPoint_Logger_Action.CREATE]],
+        ),
+      );
     });
     /**
      * updateViewPoint事件
      */
-    this.pubsub.subscribe('updateViewPoint', (data) => {
-      console.log('updateViewPoint', data);
+    this.pubsub.subscribe('updateViewPoint', async (data) => {
+      const { service, student_id, viewpoint_id } = data;
+      await service.insert(
+        service.generateInsertSql<ViewPoint_Logger>(
+          'viewpoint_log',
+          ['student_id', 'viewpoint_id', 'created_time', 'action'],
+          [[student_id, viewpoint_id, 'NOW', ViewPoint_Logger_Action.UPDATE]],
+        ),
+      );
     });
   }
 }
