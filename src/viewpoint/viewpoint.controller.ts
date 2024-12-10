@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Patch } from '@nestjs/common';
 import { ViewpointService } from './viewpoint.service';
 import {
   CreateAgreeArgs,
@@ -7,6 +7,7 @@ import {
   CreateIdeaArgs,
   CreateResponseArgs,
   CreateTopicArgs,
+  UpdateIdeaArgs,
 } from './viewpoint.interface';
 /**
  * 控制器,控制观点的交互
@@ -49,9 +50,9 @@ export class ViewpointController {
     return this.viewpointService.createResponse(args);
   }
   @Get('topic')
-  getTopicById(@Query('id') id: number) {
+  getTopicById(@Query('topic_id') topic_id: number) {
     return this.viewpointService.getTopic({
-      topic_id: id,
+      topic_id,
     });
   }
   @Get('group')
@@ -110,5 +111,9 @@ export class ViewpointController {
       id,
       student_id,
     });
+  }
+  @Patch('idea')
+  updateIdea(@Body() args: UpdateIdeaArgs) {
+    return this.viewpointService.updateIdea(args);
   }
 }

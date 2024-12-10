@@ -421,6 +421,26 @@ export interface ViewPoint_Response
     | 'student_id'
     | 'response_content'
   > {}
+export interface ViewPoint_Update_Log
+  extends Pick<
+    ViewPoint,
+    | 'id'
+    | 'agree_reason'
+    | 'agree_supplement'
+    | 'agree_viewpoint'
+    | 'ask_question'
+    | 'created_time'
+    | 'disagree_reason'
+    | 'disagree_suggestion'
+    | 'disagree_viewpoint'
+    | 'idea_conclusion'
+    | 'idea_limitation'
+    | 'idea_reason'
+    | 'removed'
+    | 'response_content'
+  > {
+  viewpoint_id: number;
+}
 export enum ViewPoint_Logger_Action {
   CREATE = 'create',
   CHECK = 'check',
@@ -451,4 +471,5 @@ export type Tables =
   | 'chat_message_storage'
   | 'node_table_revise_logger'
   | 'viewpoint'
-  | 'viewpoint_log';
+  | 'viewpoint_log'
+  | 'viewpoint_update_log';

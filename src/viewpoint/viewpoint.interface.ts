@@ -56,3 +56,12 @@ export interface GetViewPointListArgs {
   topic_id: number;
   student_id: number;
 }
+export interface CommonUpdateArgs {
+  student_id: number;
+  id: number;
+}
+export interface UpdateIdeaArgs extends CommonUpdateArgs {
+  idea_conclusion: string;
+  idea_reason: string;
+  idea_limitation: string;
+}

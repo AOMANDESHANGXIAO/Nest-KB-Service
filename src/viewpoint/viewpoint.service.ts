@@ -10,6 +10,7 @@ import {
   GetTopicArgs,
   GetContentArgs,
   GetViewPointListArgs,
+  UpdateIdeaArgs,
   // GetViewPointListArgs,
 } from './viewpoint.interface';
 import {
@@ -17,17 +18,18 @@ import {
   ViewPoint_Topic,
   VIEWPOINT_TYPE,
   VIEWPOINT_NO_TARGET,
-  VIEWPOINT_NOT_REMOVED,
   ViewPoint_Group,
   ViewPoint_Idea,
   ViewPoint_Agree,
   ViewPoint_Disagree,
   ViewPoint_Ask,
   ViewPoint_Response,
+  ViewPoint_Update_Log,
 } from 'src/crud/Table.model';
 import { viewpointLogger } from './viewpoint.logger';
 import { BLUE, GREEN, YELLOW, RED, PURPLE } from './viewpoint.constant';
-
+import { VIEWPOINT_NOT_REMOVED } from '../crud/Table.model';
+import { escapeSqlString } from 'src/utils/escapeString';
 class ViewPointColorHandle {
   static getColor(type: VIEWPOINT_TYPE) {
     switch (type) {
@@ -329,6 +331,7 @@ export class ViewpointService extends SqlService {
       idea_reason,
       idea_limitation,
     } = args;
+    let id: string = '';
     await this.transaction(async () => {
       const groupNodeId = await ViewPointSqlTools.getGroupNodeId(this, {
         student_id,
@@ -364,6 +367,7 @@ export class ViewpointService extends SqlService {
           ],
         ),
       );
+      id = viewpoint_id;
       viewpointLogger.pubsub.publish('createViewPoint', {
         service: this,
         student_id,
@@ -371,7 +375,9 @@ export class ViewpointService extends SqlService {
       });
     });
     return {
-      data: {},
+      data: {
+        id: String(id),
+      },
       message: '创建成功',
     };
   }
@@ -384,6 +390,7 @@ export class ViewpointService extends SqlService {
       agree_viewpoint,
       target,
     } = args;
+    let id: string = '';
     await this.transaction(async () => {
       const viewpoint_id = await this.insert(
         this.generateInsertSql<ViewPoint_Agree>( // 假设同意记录也使用 ViewPoint_Idea 类型
@@ -414,6 +421,7 @@ export class ViewpointService extends SqlService {
           ],
         ),
       );
+      id = viewpoint_id;
       viewpointLogger.pubsub.publish('createViewPoint', {
         service: this,
         student_id,
@@ -421,7 +429,9 @@ export class ViewpointService extends SqlService {
       });
     });
     return {
-      data: {},
+      data: {
+        id: String(id),
+      },
     };
   }
   async createDisAgree(args: CreateDisAgreeArgs) {
@@ -433,6 +443,7 @@ export class ViewpointService extends SqlService {
       disagree_viewpoint,
       target,
     } = args;
+    let id: string = '';
     await this.transaction(async () => {
       const viewpoint_id = await this.insert(
         this.generateInsertSql<ViewPoint_Disagree>( // 假设不同意记录也使用 ViewPoint_Idea 类型
@@ -463,6 +474,7 @@ export class ViewpointService extends SqlService {
           ],
         ),
       );
+      id = viewpoint_id;
       // 创建一个不同意连接到指定的观点上
       viewpointLogger.pubsub.publish('createViewPoint', {
         service: this,
@@ -471,11 +483,14 @@ export class ViewpointService extends SqlService {
       });
     });
     return {
-      data: {},
+      data: {
+        id: String(id),
+      },
     };
   }
   async createAsk(args: CreateAskArgs) {
     const { topic_id, student_id, ask_question, target } = args;
+    let id_ = '';
     await this.transaction(async () => {
       const id = await this.insert(
         this.generateInsertSql<ViewPoint_Ask>( // 假设 Ask 记录也使用 ViewPoint_Idea 类型
@@ -502,6 +517,7 @@ export class ViewpointService extends SqlService {
           ],
         ),
       );
+      id_ = id;
       viewpointLogger.pubsub.publish('createViewPoint', {
         service: this,
         student_id,
@@ -509,12 +525,15 @@ export class ViewpointService extends SqlService {
       });
     });
     return {
-      data: {},
+      data: {
+        id: String(id_),
+      },
       message: '提问成功',
     };
   }
   async createResponse(args: CreateResponseArgs) {
     const { topic_id, student_id, response_content, target } = args;
+    let id_ = '';
     await this.transaction(async () => {
       const id = await this.insert(
         this.generateInsertSql<ViewPoint_Response>( // 假设 Response 记录使用 ViewPoint_Response 类型
@@ -541,6 +560,7 @@ export class ViewpointService extends SqlService {
           ],
         ),
       );
+      id_ = id;
       viewpointLogger.pubsub.publish('createViewPoint', {
         service: this,
         student_id,
@@ -548,7 +568,9 @@ export class ViewpointService extends SqlService {
       });
     });
     return {
-      data: {},
+      data: {
+        id: String(id_),
+      },
       message: '响应成功',
     };
   }
@@ -666,7 +688,7 @@ export class ViewpointService extends SqlService {
             key: 'idea_limitation',
             value: res.idea_limitation,
           },
-        ],
+        ].filter((item) => item.value),
         target_viewpoint_id: String(res.target),
       },
     };
@@ -842,6 +864,79 @@ export class ViewpointService extends SqlService {
         target_viewpoint_id: String(res.target_viewpoint_id),
         target_student_id: String(res.target_student_id),
       },
+    };
+  }
+  async updateIdea(args: UpdateIdeaArgs) {
+    const { student_id, id, idea_conclusion, idea_limitation, idea_reason } =
+      args;
+    await this.transaction(async () => {
+      /**
+       * 先将以前的查询出来
+       */
+      const sql = `
+    SELECT
+      vp.idea_conclusion,
+      vp.idea_limitation,
+      vp.idea_reason 
+    FROM
+      viewpoint vp 
+    WHERE
+      id = ${id};
+    `;
+      const [oldValue] = await this.query<{
+        idea_conclusion: string;
+        idea_limitation: string;
+        idea_reason: string;
+      }>(sql);
+      /**
+       * 先存储oldValue
+       */
+      await this.insert(
+        this.generateInsertSql<ViewPoint_Update_Log>(
+          'viewpoint_update_log',
+          [
+            'idea_conclusion',
+            'idea_limitation',
+            'idea_reason',
+            'removed',
+            'created_time',
+            'viewpoint_id',
+          ],
+          [
+            [
+              oldValue.idea_conclusion,
+              oldValue.idea_limitation,
+              oldValue.idea_reason,
+              VIEWPOINT_NOT_REMOVED,
+              'NOW',
+              id,
+            ],
+          ],
+        ),
+      );
+      /**
+       * 更新
+       */
+      const updateSql = `
+    UPDATE viewpoint SET
+      idea_conclusion = '${escapeSqlString(idea_conclusion)}',
+      idea_limitation = '${escapeSqlString(idea_limitation)}',
+      idea_reason = '${escapeSqlString(idea_reason)}'
+    WHERE id = ${id}
+    `;
+      await this.update(updateSql);
+      viewpointLogger.pubsub.publish('updateViewPoint', {
+        service: this,
+        student_id: student_id,
+        viewpoint_id: id,
+      });
+    });
+
+    return {
+      data: {
+        id: String(id),
+      },
+      message: '修改成功',
     };
   }
 }
