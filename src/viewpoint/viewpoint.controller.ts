@@ -16,11 +16,11 @@ export class ViewpointController {
   constructor(private readonly viewpointService: ViewpointService) {}
   @Get('list')
   getViewpointList(
-    @Query('id') id: number,
+    @Query('topic_id') topic_id: number,
     @Query('student_id') student_id: number,
   ) {
     return this.viewpointService.queryViewPointList({
-      topic_id: id,
+      topic_id,
       student_id,
     });
   }

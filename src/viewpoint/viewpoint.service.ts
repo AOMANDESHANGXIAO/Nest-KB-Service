@@ -26,6 +26,29 @@ import {
   ViewPoint_Response,
 } from 'src/crud/Table.model';
 import { viewpointLogger } from './viewpoint.logger';
+import { BLUE, GREEN, YELLOW, RED, PURPLE } from './viewpoint.constant';
+
+class ViewPointColorHandle {
+  static getColor(type: VIEWPOINT_TYPE) {
+    switch (type) {
+      case VIEWPOINT_TYPE.IDEA: {
+        return BLUE;
+      }
+      case VIEWPOINT_TYPE.AGREE: {
+        return GREEN;
+      }
+      case VIEWPOINT_TYPE.DISAGREE: {
+        return RED;
+      }
+      case VIEWPOINT_TYPE.RESPONSE: {
+        return PURPLE;
+      }
+      case VIEWPOINT_TYPE.ASK: {
+        return YELLOW;
+      }
+    }
+  }
+}
 
 class ViewPointSqlTools {
   static async getTopicNodeId(s: SqlService, topicId: number) {
@@ -78,6 +101,7 @@ export class ViewpointService extends SqlService {
       s.color,
       s.nickname,
       s.group_id as student_group_id,
+      g.group_name,
       g.group_color,
       d.topic_content,
       vp2.student_id as target_student_id,
@@ -103,6 +127,7 @@ export class ViewpointService extends SqlService {
       color: string;
       nickname: string;
       student_group_id: number;
+      group_name: string;
       group_color: string;
       topic_content: string;
       target_student_id: number;
@@ -128,7 +153,7 @@ export class ViewpointService extends SqlService {
           type: item.type,
           data: {
             id: String(item.id),
-            groupName: item.group_color,
+            groupName: item.group_name,
             groupConclusion: item.idea_conclusion,
             bgc: item.group_color,
             group_id: String(item.group_id),
@@ -148,14 +173,18 @@ export class ViewpointService extends SqlService {
             y: 0,
           },
           data: {
+            type: item.type,
             name: item.nickname,
             id: String(item.id),
-            bgc: item.color,
+            bgc: ViewPointColorHandle.getColor(item.type),
             student_id: String(item.student_id),
           },
         };
       }
     });
+    const targetIsStudentNodeIds = list
+      .filter((item) => item.target_student_id === student_id)
+      .map((item) => item.id);
     const edges = list
       .filter((item) => item.target !== VIEWPOINT_NO_TARGET)
       .map((item) => {
@@ -164,7 +193,8 @@ export class ViewpointService extends SqlService {
           source: String(item.id),
           target: String(item.target),
           _type: item.type,
-          animated: false,
+          // 添加功能，如果是指向自己的节点那么将animated设置为true
+          animated: targetIsStudentNodeIds.includes(item.target),
         };
       });
     // 找到当前id的student回复过的所有ViewPoint的id
