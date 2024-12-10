@@ -601,7 +601,23 @@ export class ViewpointService extends SqlService {
     });
     return {
       data: {
-        ...res,
+        list: [
+          {
+            title: '结论',
+            key: 'idea_conclusion',
+            value: res.idea_conclusion,
+          },
+          {
+            title: '原因',
+            key: 'idea_reason',
+            value: res.idea_reason,
+          },
+          {
+            title: '局限性',
+            key: 'idea_limitation',
+            value: res.idea_limitation,
+          },
+        ].filter((item) => item.value !== ''),
         target_viewpoint_id: String(res.target_viewpoint_id),
       },
     };
@@ -634,7 +650,23 @@ export class ViewpointService extends SqlService {
     });
     return {
       data: {
-        ...res,
+        list: [
+          {
+            title: '结论',
+            key: 'idea_conclusion',
+            value: res.idea_conclusion,
+          },
+          {
+            title: '原因',
+            key: 'idea_reason',
+            value: res.idea_reason,
+          },
+          {
+            title: '局限性',
+            key: 'idea_limitation',
+            value: res.idea_limitation,
+          },
+        ],
         target_viewpoint_id: String(res.target),
       },
     };
@@ -668,7 +700,23 @@ export class ViewpointService extends SqlService {
     });
     return {
       data: {
-        ...res,
+        list: [
+          {
+            title: '同意的点',
+            key: 'agree_viewpoint',
+            value: res.agree_viewpoint,
+          },
+          {
+            title: '原因',
+            key: 'agree_reason',
+            value: res.agree_reason,
+          },
+          {
+            title: '可改进点',
+            key: 'agree_supplement',
+            value: res.agree_supplement,
+          },
+        ].filter((item) => item.value !== ''),
         target_viewpoint_id: String(res.target_viewpoint_id),
         target_student_id: String(res.target_student_id),
       },
@@ -702,7 +750,23 @@ export class ViewpointService extends SqlService {
     });
     return {
       data: {
-        ...res,
+        list: [
+          {
+            title: '不同意的点',
+            key: 'disagree_viewpoint',
+            value: res.disagree_viewpoint,
+          },
+          {
+            title: '原因',
+            key: 'disagree_reason',
+            value: res.disagree_reason,
+          },
+          {
+            title: '改进意见',
+            key: 'disagree_suggestion',
+            value: res.disagree_suggestion,
+          },
+        ].filter((item) => item.value !== ''),
         target_viewpoint_id: String(res.target_viewpoint_id),
         target_student_id: String(res.target_student_id),
       },
@@ -732,7 +796,13 @@ export class ViewpointService extends SqlService {
     });
     return {
       data: {
-        ...res,
+        list: [
+          {
+            title: '疑惑的点',
+            key: 'ask_question',
+            value: res.ask_question,
+          },
+        ].filter((item) => item.value !== ''),
         target_viewpoint_id: String(res.target_viewpoint_id),
         target_student_id: String(res.target_student_id),
       },
@@ -762,7 +832,13 @@ export class ViewpointService extends SqlService {
     });
     return {
       data: {
-        ...res,
+        list: [
+          {
+            title: '回应的内容',
+            key: 'response_content',
+            value: res.response_content,
+          },
+        ].filter((item) => item.value !== ''),
         target_viewpoint_id: String(res.target_viewpoint_id),
         target_student_id: String(res.target_student_id),
       },
