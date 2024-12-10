@@ -11,6 +11,10 @@ import {
   GetContentArgs,
   GetViewPointListArgs,
   UpdateIdeaArgs,
+  UpdateAgreeArgs,
+  UpdateDisAgreeArgs,
+  UpdateGroupArgs,
+  UpdateResponseArgs,
   // GetViewPointListArgs,
 } from './viewpoint.interface';
 import {
@@ -30,6 +34,8 @@ import { viewpointLogger } from './viewpoint.logger';
 import { BLUE, GREEN, YELLOW, RED, PURPLE } from './viewpoint.constant';
 import { VIEWPOINT_NOT_REMOVED } from '../crud/Table.model';
 import { escapeSqlString } from 'src/utils/escapeString';
+import { UpdateAskArgs } from '../../dist/viewpoint/viewpoint.interface';
+
 class ViewPointColorHandle {
   static getColor(type: VIEWPOINT_TYPE) {
     switch (type) {
@@ -289,7 +295,7 @@ export class ViewpointService extends SqlService {
       const allGroupIds = await this.query<{
         id: number;
       }>(queryAllGroupSql);
-      // 2. 创建所有的group节点
+      // 2. 创建所��的group节点
       await this.insert(
         this.generateInsertSql<ViewPoint_Group>(
           'viewpoint',
@@ -922,6 +928,304 @@ export class ViewpointService extends SqlService {
       idea_conclusion = '${escapeSqlString(idea_conclusion)}',
       idea_limitation = '${escapeSqlString(idea_limitation)}',
       idea_reason = '${escapeSqlString(idea_reason)}'
+    WHERE id = ${id}
+    `;
+      await this.update(updateSql);
+      viewpointLogger.pubsub.publish('updateViewPoint', {
+        service: this,
+        student_id: student_id,
+        viewpoint_id: id,
+      });
+    });
+
+    return {
+      data: {
+        id: String(id),
+      },
+      message: '修改成功',
+    };
+  }
+  async updateGroup(args: UpdateGroupArgs) {
+    const { student_id, id, idea_conclusion, idea_limitation, idea_reason } =
+      args;
+    await this.transaction(async () => {
+      // ... existing code for fetching old values ...
+      const sql = `
+    SELECT
+      vp.idea_conclusion,
+      vp.idea_limitation,
+      vp.idea_reason 
+    FROM
+      viewpoint vp 
+    WHERE
+      id = ${id};
+    `;
+      const [oldValue] = await this.query<{
+        idea_conclusion: string;
+        idea_limitation: string;
+        idea_reason: string;
+      }>(sql);
+      // ... existing code for storing old values ...
+      await this.insert(
+        this.generateInsertSql<ViewPoint_Update_Log>(
+          'viewpoint_update_log',
+          [
+            'idea_conclusion',
+            'idea_limitation',
+            'idea_reason',
+            'removed',
+            'created_time',
+            'viewpoint_id',
+          ],
+          [
+            [
+              oldValue.idea_conclusion,
+              oldValue.idea_limitation,
+              oldValue.idea_reason,
+              VIEWPOINT_NOT_REMOVED,
+              'NOW',
+              id,
+            ],
+          ],
+        ),
+      );
+      // ... existing code for updating ...
+      const updateSql = `
+    UPDATE viewpoint SET
+      idea_conclusion = '${escapeSqlString(idea_conclusion)}',
+      idea_limitation = '${escapeSqlString(idea_limitation)}',
+      idea_reason = '${escapeSqlString(idea_reason)}'
+    WHERE id = ${id}
+    `;
+      await this.update(updateSql);
+      viewpointLogger.pubsub.publish('updateViewPoint', {
+        service: this,
+        student_id: student_id,
+        viewpoint_id: id,
+      });
+    });
+
+    return {
+      data: {
+        id: String(id),
+      },
+      message: '修改成功',
+    };
+  }
+
+  async updateAgree(args: UpdateAgreeArgs) {
+    const { student_id, id, agree_reason, agree_supplement, agree_viewpoint } =
+      args;
+    await this.transaction(async () => {
+      // ... existing code for fetching old values ...
+      const sql = `
+    SELECT
+      vp.agree_reason,
+      vp.agree_supplement,
+      vp.agree_viewpoint 
+    FROM
+      viewpoint vp 
+    WHERE
+      id = ${id};
+    `;
+      const [oldValue] = await this.query<{
+        agree_reason: string;
+        agree_supplement: string;
+        agree_viewpoint: string;
+      }>(sql);
+      // ... existing code for storing old values ...
+      await this.insert(
+        this.generateInsertSql<ViewPoint_Update_Log>(
+          'viewpoint_update_log',
+          [
+            'agree_reason',
+            'agree_supplement',
+            'agree_viewpoint',
+            'removed',
+            'created_time',
+            'viewpoint_id',
+          ],
+          [
+            [
+              oldValue.agree_reason,
+              oldValue.agree_supplement,
+              oldValue.agree_viewpoint,
+              VIEWPOINT_NOT_REMOVED,
+              'NOW',
+              id,
+            ],
+          ],
+        ),
+      );
+      // ... existing code for updating ...
+      const updateSql = `
+    UPDATE viewpoint SET
+      agree_reason = '${escapeSqlString(agree_reason)}',
+      agree_supplement = '${escapeSqlString(agree_supplement)}',
+      agree_viewpoint = '${escapeSqlString(agree_viewpoint)}'
+    WHERE id = ${id}
+    `;
+      await this.update(updateSql);
+      viewpointLogger.pubsub.publish('updateViewPoint', {
+        service: this,
+        student_id: student_id,
+        viewpoint_id: id,
+      });
+    });
+
+    return {
+      data: {
+        id: String(id),
+      },
+      message: '修改成功',
+    };
+  }
+
+  async updateDisagree(args: UpdateDisAgreeArgs) {
+    const {
+      student_id,
+      id,
+      disagree_reason,
+      disagree_suggestion,
+      disagree_viewpoint,
+    } = args;
+    await this.transaction(async () => {
+      // ... existing code for fetching old values ...
+      const sql = `
+    SELECT
+      vp.disagree_reason,
+      vp.disagree_suggestion,
+      vp.disagree_viewpoint 
+    FROM
+      viewpoint vp 
+    WHERE
+      id = ${id};
+    `;
+      const [oldValue] = await this.query<{
+        disagree_reason: string;
+        disagree_suggestion: string;
+        disagree_viewpoint: string;
+      }>(sql);
+      // ... existing code for storing old values ...
+      await this.insert(
+        this.generateInsertSql<ViewPoint_Update_Log>(
+          'viewpoint_update_log',
+          [
+            'disagree_reason',
+            'disagree_suggestion',
+            'disagree_viewpoint',
+            'removed',
+            'created_time',
+            'viewpoint_id',
+          ],
+          [
+            [
+              oldValue.disagree_reason,
+              oldValue.disagree_suggestion,
+              oldValue.disagree_viewpoint,
+              VIEWPOINT_NOT_REMOVED,
+              'NOW',
+              id,
+            ],
+          ],
+        ),
+      );
+      // ... existing code for updating ...
+      const updateSql = `
+    UPDATE viewpoint SET
+      disagree_reason = '${escapeSqlString(disagree_reason)}',
+      disagree_suggestion = '${escapeSqlString(disagree_suggestion)}',
+      disagree_viewpoint = '${escapeSqlString(disagree_viewpoint)}'
+    WHERE id = ${id}
+    `;
+      await this.update(updateSql);
+      viewpointLogger.pubsub.publish('updateViewPoint', {
+        service: this,
+        student_id: student_id,
+        viewpoint_id: id,
+      });
+    });
+
+    return {
+      data: {
+        id: String(id),
+      },
+      message: '修改成功',
+    };
+  }
+
+  async updateAsk(args: UpdateAskArgs) {
+    const { student_id, id, ask_question } = args;
+    await this.transaction(async () => {
+      // ... existing code for fetching old values ...
+      const sql = `
+    SELECT
+      vp.ask_question 
+    FROM
+      viewpoint vp 
+    WHERE
+      id = ${id};
+    `;
+      const [oldValue] = await this.query<{
+        ask_question: string;
+      }>(sql);
+      // ... existing code for storing old values ...
+      await this.insert(
+        this.generateInsertSql<ViewPoint_Update_Log>(
+          'viewpoint_update_log',
+          ['ask_question', 'removed', 'created_time', 'viewpoint_id'],
+          [[oldValue.ask_question, VIEWPOINT_NOT_REMOVED, 'NOW', id]],
+        ),
+      );
+      // ... existing code for updating ...
+      const updateSql = `
+    UPDATE viewpoint SET
+      ask_question = '${escapeSqlString(ask_question)}'
+    WHERE id = ${id}
+    `;
+      await this.update(updateSql);
+      viewpointLogger.pubsub.publish('updateViewPoint', {
+        service: this,
+        student_id: student_id,
+        viewpoint_id: id,
+      });
+    });
+
+    return {
+      data: {
+        id: String(id),
+      },
+      message: '修改成功',
+    };
+  }
+
+  async updateResponse(args: UpdateResponseArgs) {
+    const { student_id, id, response_content } = args;
+    await this.transaction(async () => {
+      // ... existing code for fetching old values ...
+      const sql = `
+    SELECT
+      vp.response_content 
+    FROM
+      viewpoint vp 
+    WHERE
+      id = ${id};
+    `;
+      const [oldValue] = await this.query<{
+        response_content: string;
+      }>(sql);
+      // ... existing code for storing old values ...
+      await this.insert(
+        this.generateInsertSql<ViewPoint_Update_Log>(
+          'viewpoint_update_log',
+          ['response_content', 'removed', 'created_time', 'viewpoint_id'],
+          [[oldValue.response_content, VIEWPOINT_NOT_REMOVED, 'NOW', id]],
+        ),
+      );
+      // ... existing code for updating ...
+      const updateSql = `
+    UPDATE viewpoint SET
+      response_content = '${escapeSqlString(response_content)}'
     WHERE id = ${id}
     `;
       await this.update(updateSql);

@@ -7,7 +7,12 @@ import {
   CreateIdeaArgs,
   CreateResponseArgs,
   CreateTopicArgs,
+  UpdateAgreeArgs,
+  UpdateAskArgs,
+  UpdateDisAgreeArgs,
+  UpdateGroupArgs,
   UpdateIdeaArgs,
+  UpdateResponseArgs,
 } from './viewpoint.interface';
 /**
  * 控制器,控制观点的交互
@@ -115,5 +120,25 @@ export class ViewpointController {
   @Patch('idea')
   updateIdea(@Body() args: UpdateIdeaArgs) {
     return this.viewpointService.updateIdea(args);
+  }
+  @Patch('group')
+  updateGroup(@Body() args: UpdateGroupArgs) {
+    return this.viewpointService.updateGroup(args);
+  }
+  @Patch('agree')
+  updateAgree(@Body() args: UpdateAgreeArgs) {
+    return this.viewpointService.updateAgree(args);
+  }
+  @Patch('disagree')
+  updateDisagree(@Body() args: UpdateDisAgreeArgs) {
+    return this.viewpointService.updateDisagree(args);
+  }
+  @Patch('ask')
+  updateAsk(@Body() args: UpdateAskArgs) {
+    return this.viewpointService.updateAsk(args);
+  }
+  @Patch('response')
+  updateResponse(@Body() args: UpdateResponseArgs) {
+    return this.viewpointService.updateResponse(args);
   }
 }
