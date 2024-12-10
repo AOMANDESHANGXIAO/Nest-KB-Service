@@ -208,7 +208,8 @@ export class ViewpointService extends SqlService {
     // 找到当前id的student回复过的所有ViewPoint的id
     const ids = list
       .filter((item) => item.student_id === student_id)
-      .map((item) => item.target_student_id);
+      .map((item) => item.target);
+    console.log('当前学生回复过的观点ids ==>', ids);
     // 找到当前学生还没有回复过的ViewPoint
     const notResponsed = list
       .filter((item) =>
@@ -223,13 +224,15 @@ export class ViewpointService extends SqlService {
       // 过滤出当前学生没有回复过的
       .filter(
         (item) =>
-          item.target_student_id !== student_id && !ids.includes(item.id),
+          // 第一个条件是不能回复的是自己，第二个条件是没有回复过的
+          String(item.target_student_id) === String(student_id) &&
+          !ids.includes(item.id),
       )
       .map((item) => {
         return {
           type: item.type,
           id: String(item.id),
-          name: item.target_student_name,
+          name: item.nickname,
         };
       });
 
