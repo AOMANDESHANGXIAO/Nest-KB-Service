@@ -8,6 +8,8 @@ import {
   StudentTable,
   NodeTable,
   EdgeTable,
+  ViewPoint_Group,
+  VIEWPOINT_NOT_REMOVED,
 } from 'src/crud/Table.model';
 
 @Injectable()
@@ -200,23 +202,111 @@ export class GroupService extends SqlService {
           ),
         ),
       ]);
-
+      /**
+       * 重构这个情况
+       */
       newGroup = await this.groupCrud.selectGroupByGroupId(+groupId);
-      // console.log('newGroup', newGroup);
-      // 当创建团队时，如果团队创建较晚，那么可能会没有小组讨论节点
-      // 因此需要创建小组讨论节点
-      const missingNodeIds = await this.getMissingGroupNodeIds({
-        class_id,
-        group_id: newGroup.id,
-      });
-      // console.log('missingNodeIds', missingNodeIds);
-      if (missingNodeIds.length > 0) {
-        await this.createGroupNodeFromMissingIds({
-          class_id,
-          group_id: newGroup.id,
-          missingNodeIds,
-        });
+      /**
+       * create groupNodes for all topics
+       */
+      const sqlAllTopic = `
+      SELECT
+        id
+      FROM
+        discussion
+      WHERE
+        topic_for_class_id = ${class_id}`;
+      const allTopicIds = await this.query<{ id: number }>(sqlAllTopic);
+      // 查找viewpoint表group_id为newGroup的id的viewpoint
+      const sqlAllGroupViewpoints = `
+      SELECT
+        id,
+        topic_id
+      FROM
+        viewpoint
+      WHERE
+        group_id = ${newGroup.id}`;
+      const allGroupViewpoints = await this.query<{
+        topic_id: number;
+        id: number;
+      }>(sqlAllGroupViewpoints);
+      /**
+       * 查找缺失的
+       */
+      const missingTopicIds = allTopicIds
+        .filter(
+          (item) =>
+            !allGroupViewpoints.map((v) => v.topic_id).includes(item.id),
+        ) // 找出所有没有viewpoint的topic
+        .map((item) => item.id);
+      /**
+       * 查询出所有类型为topic的viewpoint的id作为映射
+       *
+       */
+      const sqlAllTopicViewpoint = `
+      SELECT
+        id,
+        type,
+        topic_id
+      FROM
+        viewpoint
+      WHERE
+        type = 'topic'`;
+      const allTopicViewpoints = await this.query<{
+        id: number;
+        type: 'topic';
+        topic_id: number;
+      }>(sqlAllTopicViewpoint);
+      /**
+       * 创建
+       */
+      if (missingTopicIds.length > 0) {
+        await this.insert(
+          this.generateInsertSql<ViewPoint_Group>(
+            'viewpoint',
+            [
+              'group_id',
+              'created_time',
+              'idea_conclusion',
+              'idea_limitation',
+              'idea_reason',
+              'removed',
+              'topic_id',
+              'type',
+              'target',
+            ],
+            missingTopicIds
+              .map((item) => [
+                newGroup.id,
+                'NOW',
+                '',
+                '',
+                '',
+                VIEWPOINT_NOT_REMOVED,
+                item,
+                'group',
+                allTopicViewpoints.find((v) => v.topic_id === item)?.id ?? null,
+              ])
+              .filter((item) => item.at(-1)),
+          ),
+        );
       }
+
+      // // console.log('newGroup', newGroup);
+      // // 当创建团队时，如果团队创建较晚，那么可能会没有小组讨论节点
+      // // 因此需要创建小组讨论节点
+      // const missingNodeIds = await this.getMissingGroupNodeIds({
+      //   class_id,
+      //   group_id: newGroup.id,
+      // });
+      // // console.log('missingNodeIds', missingNodeIds);
+      // if (missingNodeIds.length > 0) {
+      //   await this.createGroupNodeFromMissingIds({
+      //     class_id,
+      //     group_id: newGroup.id,
+      //     missingNodeIds,
+      //   });
+      // }
     });
 
     return {
