@@ -12,6 +12,7 @@ import { FilesModule } from './files/files.module';
 import { CourseworkModule } from './coursework/coursework.module';
 import { GptModule } from './gpt/gpt.module';
 import { ViewpointModule } from './viewpoint/viewpoint.module';
+import { DataAnalysisModule } from './data-analysis/data-analysis.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ViewpointModule } from './viewpoint/viewpoint.module';
     CourseworkModule,
     GptModule,
     ViewpointModule,
+    DataAnalysisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

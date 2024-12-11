@@ -191,8 +191,8 @@ export class ViewpointService extends SqlService {
       }
     });
     const targetIsStudentNodeIds = list
-      .filter((item) => item.target_student_id === student_id)
-      .map((item) => item.id);
+      .filter((item) => String(item.target_student_id) === String(student_id))
+      .map((item) => String(item.id));
     const edges = list
       .filter((item) => item.target !== VIEWPOINT_NO_TARGET)
       .map((item) => {
@@ -202,14 +202,14 @@ export class ViewpointService extends SqlService {
           target: String(item.target),
           _type: item.type,
           // 添加功能，如果是指向自己的节点那么将animated设置为true
-          animated: targetIsStudentNodeIds.includes(item.target),
+          animated: targetIsStudentNodeIds.includes(String(item.target)),
         };
       });
     // 找到当前id的student回复过的所有ViewPoint的id
     const ids = list
       .filter((item) => item.student_id === student_id)
       .map((item) => item.target);
-    console.log('当前学生回复过的观点ids ==>', ids);
+    // console.log('当前学生回复过的观点ids ==>', ids);
     // 找到当前学生还没有回复过的ViewPoint
     const notResponsed = list
       .filter((item) =>
@@ -648,7 +648,7 @@ export class ViewpointService extends SqlService {
             key: 'idea_limitation',
             value: res.idea_limitation,
           },
-        ].filter((item) => item.value !== ''),
+        ].filter((item) => item.value),
         target_viewpoint_id: String(res.target_viewpoint_id),
       },
     };
@@ -951,6 +951,7 @@ export class ViewpointService extends SqlService {
   async updateGroup(args: UpdateGroupArgs) {
     const { student_id, id, idea_conclusion, idea_limitation, idea_reason } =
       args;
+    console.log('UpdateGroupArgs', args);
     await this.transaction(async () => {
       // ... existing code for fetching old values ...
       const sql = `
@@ -982,9 +983,9 @@ export class ViewpointService extends SqlService {
           ],
           [
             [
-              oldValue.idea_conclusion,
-              oldValue.idea_limitation,
-              oldValue.idea_reason,
+              oldValue.idea_conclusion || '',
+              oldValue.idea_limitation || '',
+              oldValue.idea_reason || '',
               VIEWPOINT_NOT_REMOVED,
               'NOW',
               id,
@@ -1015,7 +1016,6 @@ export class ViewpointService extends SqlService {
       message: '修改成功',
     };
   }
-
   async updateAgree(args: UpdateAgreeArgs) {
     const { student_id, id, agree_reason, agree_supplement, agree_viewpoint } =
       args;
@@ -1083,7 +1083,6 @@ export class ViewpointService extends SqlService {
       message: '修改成功',
     };
   }
-
   async updateDisagree(args: UpdateDisAgreeArgs) {
     const {
       student_id,
@@ -1156,7 +1155,6 @@ export class ViewpointService extends SqlService {
       message: '修改成功',
     };
   }
-
   async updateAsk(args: UpdateAskArgs) {
     const { student_id, id, ask_question } = args;
     await this.transaction(async () => {
@@ -1201,7 +1199,6 @@ export class ViewpointService extends SqlService {
       message: '修改成功',
     };
   }
-
   async updateResponse(args: UpdateResponseArgs) {
     const { student_id, id, response_content } = args;
     await this.transaction(async () => {
