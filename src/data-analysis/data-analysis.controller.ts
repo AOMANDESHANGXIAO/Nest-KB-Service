@@ -14,4 +14,11 @@ export class DataAnalysisController {
       group_id,
     });
   }
+
+  @Get('word')
+  async getWord(@Query('topic_id') topic_id: number) {
+    return this.dataAnalysisService.getGroupWords({
+      topic_id,
+    });
+  }
 }

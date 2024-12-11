@@ -12,6 +12,7 @@ import {
   YELLOW,
   BLUE,
 } from 'src/viewpoint/viewpoint.constant';
+import * as _ from 'lodash';
 
 @Injectable()
 export class DataAnalysisService extends SqlService {
@@ -170,6 +171,78 @@ export class DataAnalysisService extends SqlService {
           };
         }),
         notResponsed,
+      },
+    };
+  }
+  async getGroupWords(args: { topic_id: number }) {
+    // 拼接
+    const { topic_id } = args;
+    const sql = `
+  SELECT
+      s.group_id,
+      g.group_name,
+      vp.student_id,
+      vp.id,
+      vp.agree_viewpoint,
+      vp.agree_reason,
+      vp.agree_reason,
+      vp.ask_question,
+      vp.disagree_reason,
+      vp.disagree_suggestion,
+      vp.disagree_viewpoint,
+      vp.idea_reason,
+      vp.idea_conclusion,
+      vp.idea_limitation,
+      vp.response_content 
+    FROM
+      viewpoint vp
+      JOIN student s ON s.id = vp.student_id
+      JOIN \`group\` g ON g.id = s.group_id
+    WHERE
+      vp.topic_id = ${topic_id};
+    `;
+    const list = await this.query<{
+      group_id: number;
+      group_name: string;
+      student_id: number;
+      id: number;
+      agree_viewpoint: string;
+      agree_reason: string;
+      agree_supplement: string;
+      ask_question: string;
+      disagree_reason: string;
+      disagree_suggestion: string;
+      disagree_viewpoint: string;
+      idea_reason: string;
+      idea_conclusion: string;
+      idea_limitation: string;
+      response_content: string;
+    }>(sql);
+
+    /**
+     * 拼接每一个组的word
+     */
+    const groupedList = _.groupBy(list, (item) => item.group_name);
+    const result: { group_name: string; text: string }[] = [];
+    for (const key in groupedList) {
+      const group = groupedList[key];
+      let text = '';
+      for (const key in group) {
+        Object.keys(group[key]).forEach((item) => {
+          if (item === 'id' || item === 'group_name' || item === 'group_id') {
+            return;
+          }
+          text += group[key][item] || '';
+        });
+      }
+      result.push({
+        group_name: key,
+        text,
+      });
+    }
+    return {
+      data: {
+        list: result,
       },
     };
   }
