@@ -5,6 +5,13 @@ import {
   LinksItem,
   SeriesDataItem,
 } from './data-analysis.type';
+import {
+  GREEN,
+  RED,
+  PURPLE,
+  YELLOW,
+  BLUE,
+} from 'src/viewpoint/viewpoint.constant';
 
 @Injectable()
 export class DataAnalysisService extends SqlService {
@@ -16,6 +23,12 @@ export class DataAnalysisService extends SqlService {
     data: {
       links: LinksItem[];
       SeriesData: SeriesDataItem[];
+      notResponsed: {
+        id: string;
+        name: string;
+        type: 'agree' | 'ask' | 'agree' | 'disagree' | 'response' | 'idea';
+        color: string;
+      }[];
     };
   }> {
     const { topic_id, group_id } = args;
@@ -29,15 +42,15 @@ export class DataAnalysisService extends SqlService {
       s2.nickname AS target_nickname 
     FROM
       viewpoint vp
-      JOIN viewpoint vp2 ON vp2.id = vp.target
-      JOIN student s1 ON s1.id = vp.student_id
-      JOIN student s2 ON s2.id = vp2.student_id
-      JOIN \`group\` g ON g.id = s1.group_id
+      LEFT JOIN viewpoint vp2 ON vp2.id = vp.target
+      LEFT JOIN student s1 ON s1.id = vp.student_id
+      LEFT JOIN student s2 ON s2.id = vp2.student_id
+      LEFT JOIN \`group\` g ON g.id = s1.group_id
       where vp.topic_id = ${topic_id} and s1.group_id = ${group_id}`;
     const list = await this.query<{
       id: number;
       target: number;
-      type: 'agree' | 'ask' | 'agree' | 'disagree' | 'response';
+      type: 'agree' | 'ask' | 'agree' | 'disagree' | 'response' | 'idea';
       source: number;
       source_nickname: string;
       target_nickname: string;
@@ -50,10 +63,11 @@ export class DataAnalysisService extends SqlService {
     const links: LinksItem[] = [];
     const records = new Map();
     const names = [] as string[];
+    const interactList = list.filter((item) => item.type !== 'idea');
     /**
      * 记录每一个节点的宽度
      */
-    list.forEach((item) => {
+    interactList.forEach((item) => {
       const { source_nickname, target_nickname } = item;
       const [source, target] = [source_nickname, target_nickname].sort();
       const key = `${source}-${target}`;
@@ -101,6 +115,39 @@ export class DataAnalysisService extends SqlService {
         names.push(item.nickname);
       }
     });
+    /**
+     * 找到所有没有被回复过的观点
+     */
+    const notResponsed = [];
+    const getColor = (
+      type: 'agree' | 'ask' | 'agree' | 'disagree' | 'response' | 'idea',
+    ) => {
+      switch (type) {
+        case 'agree':
+          return GREEN;
+        case 'ask':
+          return YELLOW;
+        case 'disagree':
+          return RED;
+        case 'response':
+          return PURPLE;
+        case 'idea':
+          return BLUE;
+      }
+    };
+    list.forEach((item) => {
+      const element = list.find((el) => {
+        return String(el.target) === String(item.id);
+      });
+      if (!element) {
+        notResponsed.push({
+          id: String(item.id),
+          name: item.source_nickname,
+          type: item.type,
+          color: getColor(item.type),
+        });
+      }
+    });
     const getWidth = (source_: string, target_: string) => {
       const [source, target] = [source_, target_].sort();
       const key = `${source}-${target}`;
@@ -122,6 +169,7 @@ export class DataAnalysisService extends SqlService {
             name: item,
           };
         }),
+        notResponsed,
       },
     };
   }
