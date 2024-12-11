@@ -16,7 +16,7 @@ import {
   UpdateGroupArgs,
   UpdateResponseArgs,
   // GetViewPointListArgs,
-} from './viewpoint.interface';
+} from './viewpoint.type';
 import {
   DiscussTable,
   ViewPoint_Topic,
@@ -34,7 +34,7 @@ import { viewpointLogger } from './viewpoint.logger';
 import { BLUE, GREEN, YELLOW, RED, PURPLE } from './viewpoint.constant';
 import { VIEWPOINT_NOT_REMOVED } from '../crud/Table.model';
 import { escapeSqlString } from 'src/utils/escapeString';
-import { UpdateAskArgs } from '../../dist/viewpoint/viewpoint.interface';
+import { UpdateAskArgs } from '../../dist/viewpoint/viewpoint.type';
 
 class ViewPointColorHandle {
   static getColor(type: VIEWPOINT_TYPE) {
