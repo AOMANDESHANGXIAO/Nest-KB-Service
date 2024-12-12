@@ -11,6 +11,7 @@ export interface StudentTable {
   username: string;
   password: string;
   nickname: string;
+  color: string;
 }
 /**
  * 记录小组

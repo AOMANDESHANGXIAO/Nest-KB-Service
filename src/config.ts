@@ -8,6 +8,14 @@ const config = {
     password: '123456',
     database: 'knowledgebuilding',
   },
+  // db: {
+  //   /* the config of the mysql database */
+  //   host: 'localhost',
+  //   port: 3306,
+  //   user: 'swzl_db',
+  //   password: 'PECirHCENizSYh3w',
+  //   database: 'swzl_db',
+  // },
   jwt: {
     /* the config of the jwt */ secretKey: 'TheRidiculousAdventurer',
     expiresIn: '30d', // 30d

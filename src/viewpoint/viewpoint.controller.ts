@@ -13,7 +13,7 @@ import {
   UpdateGroupArgs,
   UpdateIdeaArgs,
   UpdateResponseArgs,
-} from './viewpoint.type';
+} from './viewpoint.args';
 /**
  * 控制器,控制观点的交互
  */

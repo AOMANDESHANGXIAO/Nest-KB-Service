@@ -36,8 +36,8 @@ export class UserService extends SqlService {
         await this.insert(
           this.generateInsertSql<StudentTable>(
             'student',
-            ['username', 'password', 'nickname', 'class_id'],
-            [[username, hashedPassword, nickname, class_id]],
+            ['username', 'password', 'nickname', 'class_id', 'color'],
+            [[username, hashedPassword, nickname, class_id, '#fff']],
           ),
         );
       });

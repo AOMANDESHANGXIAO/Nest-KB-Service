@@ -16,7 +16,7 @@ import {
   UpdateGroupArgs,
   UpdateResponseArgs,
   // GetViewPointListArgs,
-} from './viewpoint.type';
+} from './viewpoint.args';
 import {
   DiscussTable,
   ViewPoint_Topic,
@@ -34,7 +34,7 @@ import { viewpointLogger } from './viewpoint.logger';
 import { BLUE, GREEN, YELLOW, RED, PURPLE } from './viewpoint.constant';
 import { VIEWPOINT_NOT_REMOVED } from '../crud/Table.model';
 import { escapeSqlString } from 'src/utils/escapeString';
-import { UpdateAskArgs } from '../../dist/viewpoint/viewpoint.type';
+import { UpdateAskArgs } from './viewpoint.args';
 
 class ViewPointColorHandle {
   static getColor(type: VIEWPOINT_TYPE) {
@@ -298,34 +298,37 @@ export class ViewpointService extends SqlService {
       const allGroupIds = await this.query<{
         id: number;
       }>(queryAllGroupSql);
-      // 2. 创建所��的group节点
-      await this.insert(
-        this.generateInsertSql<ViewPoint_Group>(
-          'viewpoint',
-          [
-            'group_id',
-            'removed',
-            'target',
-            'topic_id',
-            'type',
-            'created_time',
-            'idea_conclusion',
-            'idea_limitation',
-            'idea_reason',
-          ],
-          allGroupIds.map((item) => [
-            item.id,
-            VIEWPOINT_NOT_REMOVED,
-            insertTopicId,
-            insertDiscussionId,
-            VIEWPOINT_TYPE.GROUP,
-            'NOW',
-            '',
-            '',
-            '',
-          ]),
-        ),
-      );
+      // 2. 创建所有的group节点
+      const columnValues = allGroupIds.map((item) => [
+        item.id,
+        VIEWPOINT_NOT_REMOVED,
+        insertTopicId,
+        insertDiscussionId,
+        VIEWPOINT_TYPE.GROUP,
+        'NOW',
+        '',
+        '',
+        '',
+      ]);
+      if (columnValues.length) {
+        await this.insert(
+          this.generateInsertSql<ViewPoint_Group>(
+            'viewpoint',
+            [
+              'group_id',
+              'removed',
+              'target',
+              'topic_id',
+              'type',
+              'created_time',
+              'idea_conclusion',
+              'idea_limitation',
+              'idea_reason',
+            ],
+            columnValues,
+          ),
+        );
+      }
     });
     return {
       data: {},
@@ -484,7 +487,7 @@ export class ViewpointService extends SqlService {
         ),
       );
       id = viewpoint_id;
-      // 创建一个不同意连接到指定的观点上
+      // 创建一个不同意连接到��定的观点上
       viewpointLogger.pubsub.publish('createViewPoint', {
         service: this,
         student_id,
