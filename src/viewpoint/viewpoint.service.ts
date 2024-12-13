@@ -190,9 +190,9 @@ export class ViewpointService extends SqlService {
         };
       }
     });
-    const targetIsStudentNodeIds = list
-      .filter((item) => String(item.target_student_id) === String(student_id))
-      .map((item) => String(item.id));
+    // const targetIsStudentNodeIds = list
+    //   .filter((item) => String(item.target_student_id) === String(student_id))
+    //   .map((item) => String(item.id));
     const edges = list
       .filter((item) => item.target !== VIEWPOINT_NO_TARGET)
       .map((item) => {
@@ -201,16 +201,13 @@ export class ViewpointService extends SqlService {
           source: String(item.id),
           target: String(item.target),
           _type: item.type,
-          // 添加功能，如果是指向自己的节点那么将animated设置为true
-          animated: targetIsStudentNodeIds.includes(String(item.target)),
+          animated: false,
         };
       });
     // 找到当前id的student回复过的所有ViewPoint的id
     const ids = list
-      .filter((item) => item.student_id === student_id)
+      .filter((item) => item.student_id === Number(student_id))
       .map((item) => item.target);
-    // console.log('当前学生回复过的观点ids ==>', ids);
-    // 找到当前学生还没有回复过的ViewPoint
     const notResponsed = list
       .filter((item) =>
         // 过滤出支持、反对、困惑、回应的viewpoint
