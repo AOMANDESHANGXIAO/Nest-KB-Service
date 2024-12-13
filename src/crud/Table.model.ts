@@ -217,6 +217,7 @@ export interface Chat_Message_Storage {
   message: string;
   created_time: Date;
   success: number;
+  gpt_response: string;
 }
 export const SUCCESS_CHAT = 1;
 export const FAILED_CHAT = 0;

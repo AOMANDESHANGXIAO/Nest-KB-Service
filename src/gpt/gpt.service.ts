@@ -56,14 +56,15 @@ export class GptService extends SqlService {
     topic_id: string;
     new_message: string;
     success: number;
+    gpt_response: string;
   }) {
-    const { student_id, topic_id, new_message, success } = params;
+    const { student_id, topic_id, new_message, success, gpt_response } = params;
     // console.log('params', params);
-    this.transaction(async () => {
+    await this.transaction(async () => {
       const escapedMessage = this.escapeSqlString(new_message);
       const sql = `
-      INSERT INTO chat_message_storage (student, topic, message, created_time, success) 
-      VALUES (${student_id}, ${topic_id}, '${escapedMessage}', NOW(), ${success})
+      INSERT INTO chat_message_storage (student, topic, message, created_time, success, gpt_response) 
+      VALUES (${student_id}, ${topic_id}, '${escapedMessage}', NOW(), ${success}, '${gpt_response}')
       `;
       // 记录学生行为
       await this.insert(sql);
@@ -90,7 +91,7 @@ export class GptService extends SqlService {
       throw new Error('student_id, topic_id and new_message are required');
     }
     let isSuccess = false;
-
+    let gpt_response = '';
     // 流式传输
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -111,7 +112,9 @@ export class GptService extends SqlService {
       for await (const part of stream) {
         const content = part.choices[0]?.delta?.content || '';
         if (content) {
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+          const text = JSON.stringify({ content });
+          gpt_response += content;
+          res.write(`data: ${text}\n\n`);
         }
       }
       res.write('data: [DONE]\n\n');
@@ -121,11 +124,16 @@ export class GptService extends SqlService {
       res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
       isSuccess = false;
     } finally {
+      // console.log(
+      //   'Stream response complete, and the gpt_response is ',
+      //   gpt_response,
+      // );
       await this.chatMessageLog({
         student_id,
         topic_id,
         new_message,
         success: isSuccess ? SUCCESS_CHAT : FAILED_CHAT,
+        gpt_response,
       });
       res.end();
     }
