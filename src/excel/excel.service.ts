@@ -261,6 +261,59 @@ export class ExcelService extends SqlService {
     return this.exportExcel<any>({ data, columns });
   }
 
+  async getViewPointLogExcel(topic_id: number) {
+    const sql = `
+    SELECT
+      log.id,
+      s.nickname,
+      log.created_time,
+      log.viewpoint_Id,
+      log.action,
+      g.group_name,
+      vp.type 
+    FROM
+      viewpoint_log log
+      JOIN student s ON s.id = log.student_id
+      JOIN \`group\` g ON g.id = s.group_id
+      JOIN viewpoint vp ON vp.id = log.viewpoint_Id 
+    WHERE
+      vp.topic_id = ${topic_id} 
+    ORDER BY
+      g.group_name,
+      s.nickname,
+      log.created_time;`;
+    const result = await this.query<{
+      id: number;
+      type: string;
+      nickname: string;
+      group_name: string;
+      viewpoint_Id: number;
+      action: string;
+      created_time: Date;
+    }>(sql);
+
+    const data = result.map((item) => {
+      return {
+        id: String(item.id),
+        type: item.type,
+        nickname: item.nickname,
+        group_name: item.group_name,
+        viewpoint_Id: String(item.viewpoint_Id),
+        action: item.action,
+        created_time: String(item.created_time),
+      };
+    });
+    const columns = [
+      { header: 'id', key: 'id', width: 20 },
+      { header: '学生', key: 'nickname', width: 20 },
+      { header: '所在组', key: 'group_name', width: 20 },
+      { header: '行为', key: 'action', width: 20 },
+      { header: '类型', key: 'type', width: 20 },
+      { header: '创建时间', key: 'created_time', width: 20 },
+    ];
+    return this.exportExcel<any>({ data, columns });
+  }
+
   /**
    * 导出 Excel 表格
    */
