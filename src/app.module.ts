@@ -13,6 +13,7 @@ import { CourseworkModule } from './coursework/coursework.module';
 import { GptModule } from './gpt/gpt.module';
 import { ViewpointModule } from './viewpoint/viewpoint.module';
 import { DataAnalysisModule } from './data-analysis/data-analysis.module';
+import { ExcelModule } from './excel/excel.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DataAnalysisModule } from './data-analysis/data-analysis.module';
     GptModule,
     ViewpointModule,
     DataAnalysisModule,
+    ExcelModule,
   ],
   controllers: [AppController],
   providers: [AppService],
