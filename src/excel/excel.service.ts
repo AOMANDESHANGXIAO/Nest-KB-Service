@@ -207,9 +207,60 @@ export class ExcelService extends SqlService {
     return this.exportExcel({ data: result, columns });
   }
 
-  /**
-   * 导出 Excel 表格
-   */
+  async getChatMessageExcel(topic_id: number) {
+    const sql = `
+    SELECT
+      c.id,
+      s.nickname,
+      g.group_name,
+      c.message,
+      c.student,
+      c.created_time,
+      c.success,
+      c.gpt_response 
+    FROM
+      chat_message_storage c
+      JOIN student s ON s.id = c.student
+      JOIN \`group\` g ON g.id = s.group_id 
+    WHERE
+      c.topic = ${topic_id}
+    ORDER BY
+      g.group_name,
+      c.created_time;`;
+    const result = await this.query<{
+      id: number;
+      nickname: string;
+      group_name: string;
+      message: string;
+      student: number;
+      created_time: Date;
+      success: boolean;
+      gpt_response: string;
+    }>(sql);
+    const data = result.map((item) => {
+      return {
+        id: String(item.id),
+        nickname: item.nickname,
+        group_name: item.group_name,
+        message: item.message,
+        student: item.student,
+        created_time: String(item.created_time),
+        success: item.success ? '成功' : '失败',
+        gpt_response: item.gpt_response,
+      };
+    });
+    const columns = [
+      { header: 'id', key: 'id', width: 20 },
+      { header: '学生', key: 'nickname', width: 20 },
+      { header: '所在组', key: 'group_name', width: 20 },
+      { header: '发给GPT的', key: 'message', width: 20 },
+      { header: '回复', key: 'gpt_response', width: 20 },
+      { header: '是否成功', key: 'success', width: 20 },
+      { header: '创建时间', key: 'created_time', width: 20 },
+    ];
+    return this.exportExcel<any>({ data, columns });
+  }
+
   /**
    * 导出 Excel 表格
    */

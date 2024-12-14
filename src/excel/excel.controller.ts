@@ -19,4 +19,19 @@ export class ExcelController {
     );
     res.send(buffer);
   }
+
+  @Get('/gpt/:id')
+  async exportGptExcel(@Param('id') id: number, @Res() res: Response) {
+    const buffer = await this.excelService.getChatMessageExcel(id);
+    // console.log('get buffer', buffer);
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="output_buffer.xlsx"',
+    );
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.send(buffer);
+  }
 }
